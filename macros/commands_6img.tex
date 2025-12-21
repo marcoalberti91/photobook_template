@@ -1,0 +1,42 @@
+% Command for six landscape images per page with 0cm margin
+\newcommand{\sixLandscapeImages}[6]{%
+    \newgeometry{margin=0cm} % Set custom margin
+    \begin{figure}[h]
+        \centering
+        % Row 1
+        \begin{minipage}[b]{0.495\textwidth}
+            \centering
+            \includegraphics[width=\textwidth,height=\textheight,keepaspectratio]{#1}
+        \end{minipage}
+        \hfill
+        \begin{minipage}[b]{0.495\textwidth}
+            \centering
+            \includegraphics[width=\textwidth,height=\textheight,keepaspectratio]{#2}
+        \end{minipage}
+        % Row 2
+
+        \vspace{0.5cm} % Optional vertical spacing between rows
+        \begin{minipage}[b]{0.495\textwidth}
+            \includegraphics[width=\textwidth,height=\textheight,keepaspectratio]{#3}
+        \end{minipage}
+        \hfill
+        \begin{minipage}[b]{0.495\textwidth}
+            \centering
+            \includegraphics[width=\textwidth,height=\textheight,keepaspectratio]{#4}
+            \centering
+        \end{minipage}
+        
+        % Row 3
+        \vspace{0.5cm} % Optional vertical spacing between rows
+        \begin{minipage}[b]{0.495\textwidth}
+            \centering
+            \includegraphics[width=\textwidth,height=\textheight,keepaspectratio]{#5}
+        \end{minipage}
+        \hfill
+        \begin{minipage}[b]{0.495\textwidth}
+            \centering
+            \includegraphics[width=\textwidth,height=\textheight,keepaspectratio]{#6}
+        \end{minipage}
+    \end{figure}
+    \restoregeometry % Reset margins to default
+}

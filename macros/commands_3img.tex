@@ -1,0 +1,71 @@
+% Define commands for 3-image layout, one landscape at the top, otwo portrait at the bottom
+
+% Define a command for 3 images with large margins
+\newcommand{\threeImagesLargeMargins}[3]{
+    \begin{figure}[b!] % Portrait images at the bottom
+        \centering
+        % First portrait image (left)
+        \begin{minipage}[b]{0.49\textwidth} % Half the width of the page
+            \centering
+            \includegraphics[width=\textwidth]{#2} % Second image (portrait left)
+        \end{minipage}
+        \hfill
+        % Second portrait image (right)
+        \begin{minipage}[b]{0.49\textwidth} % Half the width of the page
+            \centering
+            \includegraphics[width=\textwidth]{#3} % Third image (portrait right)
+        \end{minipage}
+    \end{figure}
+    \begin{figure}[h!]
+        % Landscape image at the top
+        \centering
+        \includegraphics[width=\textwidth]{#1} % First image (landscape)
+    \end{figure}
+}
+
+% Define a command for 3 images with large margins inverted
+\newcommand{\threeImagesLargeMarginsInverted}[3]{
+    \begin{figure}[h!]
+        % Landscape image at the top
+        \centering
+        \includegraphics[width=\textwidth]{#1} % First image (landscape)
+    \end{figure}
+    \begin{figure}[b!] % Portrait images at the bottom
+        \centering
+        % First portrait image (left)
+        \begin{minipage}[b]{0.49\textwidth} % Half the width of the page
+            \centering
+            \includegraphics[width=\textwidth]{#2} % Second image (portrait left)
+        \end{minipage}
+        \hfill
+        % Second portrait image (right)
+        \begin{minipage}[b]{0.49\textwidth} % Half the width of the page
+            \centering
+            \includegraphics[width=\textwidth]{#3} % Third image (portrait right)
+        \end{minipage}
+    \end{figure}
+}
+
+% Define a command for 3 images with thin margins
+\newcommand{\threeImagesThinMargins}[3]{%
+    \newgeometry{margin=0.5cm} % Set tight margins
+    \begin{figure}[b]
+        % Landscape image at the top
+        \centering
+        \includegraphics[width=\textwidth]{#1} % Full width of the page
+    \end{figure}
+    \begin{figure}[b!]
+        % Two portrait images at the bottom
+        \centering
+        \begin{minipage}[b]{0.49\textwidth} % Left portrait image
+            \centering
+            \includegraphics[width=\textwidth]{#2}
+        \end{minipage}
+        \hfill
+        \begin{minipage}[b]{0.49\textwidth} % Right portrait image
+            \centering
+            \includegraphics[width=\textwidth]{#3}
+        \end{minipage}
+    \end{figure}
+    \restoregeometry % Restore the original geometry
+}

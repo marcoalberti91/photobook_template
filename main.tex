@@ -1,0 +1,48 @@
+\documentclass[12pt]{scrbook} % You can also use other classes like memoir or scrbook
+\usepackage{geometry}
+\usepackage{placeins} % Package for managing images
+\usepackage{fancyhdr} % Package for page header and footer customization
+
+% Set the page dimensions: 216x303 mm
+\geometry{
+  papersize={216mm,303mm}, % Set the page size
+  hmargin={25mm,25mm},     % Horizontal margins (left, right)
+  vmargin={25mm,25mm},     % Vertical margins (top, bottom)
+}
+
+\usepackage{graphicx} % For inserting images
+
+\title{Photobook Template}
+\author{Marco Alberti}
+\date{December 2025}
+
+\usepackage{natbib}
+\usepackage{graphicx}
+\usepackage[export]{adjustbox} % gives \adjincludegraphics with %trim using \width/\height
+
+% Configure the footer layout
+\pagestyle{fancy}
+\fancyhf{}  % Remove default headers and footers
+\fancyfoot[C]{\thepage}  % Page number centered in the footer
+\renewcommand{\headrulewidth}{0pt}  % Remove the horizontal line at the top
+
+% Import macros
+\input{macros/commands_1img.tex}
+\input{macros/commands_2img.tex}
+\input{macros/commands_3img.tex}
+\input{macros/commands_4img.tex}
+\input{macros/commands_6img.tex}
+\input{macros/commands_8img.tex}
+
+\setlength{\footskip}{30pt} % Position of page number in footer, necessary to prevent it from being cut off
+
+\begin{document}
+
+% Create the first page with title, author, date
+%\maketitle
+
+\include{sections/day1}
+\include{sections/day2}
+
+
+\end{document}

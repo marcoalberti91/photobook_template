@@ -1,0 +1,75 @@
+% Command for 1 portrait image with normal margins
+\newcommand{\portraitLargeMargin}[1]{%
+    \begin{figure}[h]
+        \centering
+        \includegraphics[width=\textwidth]{#1}
+    \end{figure}
+}
+
+% Command for 1 portrait image with reduced margins
+\newcommand{\portraitThinMargin}[1]{%
+    \newgeometry{margin=1.1cm}
+    \begin{figure}[h]
+        \centering
+        \includegraphics[width=\textwidth]{#1}
+    \end{figure}
+    \restoregeometry
+}
+
+% Command for 1 landscape image with reduced margins and centered
+\newcommand{\landscapeThinMarginCentered}[1]{%
+    \newgeometry{margin=1.1cm} % Thin margins
+    \begin{figure}[!htbp]
+        \centering
+        \vspace*{\fill} % Push towards vertical center
+        \includegraphics[width=\textwidth,keepaspectratio]{#1}
+        \vspace*{\fill} % Space below to complete vertical centering
+    \end{figure}
+    \restoregeometry
+}
+
+% Command for 1 fullscreen portrait image
+\newcommand{\portraitFullscreen}[1]{%
+    \newgeometry{margin=0cm}
+    \begin{figure}
+        \centering
+        \includegraphics[width=\paperwidth,height=\paperheight]{#1}
+    \end{figure}
+    \restoregeometry
+}
+
+% Left half: cropped, shifted 6mm left
+\newcommand{\splitImageLeft}[2][0pt]{%
+  \clearpage
+  \newgeometry{margin=#1}%
+  \thispagestyle{empty}%
+  \noindent\hspace*{\fill}%
+  \adjincludegraphics[
+    width=\paperwidth,
+    height=\paperheight,
+    keepaspectratio,
+    trim={12mm 0 {.5\width-12mm} 0}, % Shift crop window 6mm left
+    clip
+  ]{#2}%
+  \par
+  \restoregeometry
+}
+
+% Right half: cropped, shifted 6mm right
+\newcommand{\splitImageRight}[2][0pt]{%
+  \clearpage
+  \newgeometry{margin=#1}%
+  \thispagestyle{empty}%
+  \noindent
+  \adjincludegraphics[
+    width=\paperwidth,
+    height=\paperheight,
+    keepaspectratio,
+    trim={{.5\width-12mm} 0 12mm 0}, % Shift crop window 6mm right
+    clip
+  ]{#2}%
+  \hspace*{\fill}%
+  \par
+  \restoregeometry
+}
+

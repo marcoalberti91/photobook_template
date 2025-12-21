@@ -1,0 +1,65 @@
+% Define a command for 2 horizontal images with thin margins
+\newcommand{\twoImagesThinMargins}[2]{%
+    \newgeometry{margin=0cm} % Remove margins
+    \begin{figure}[h]
+        \centering
+        % First horizontal image
+        \includegraphics[width=\textwidth,height=0.49\textheight,keepaspectratio]{#1}
+        % Second horizontal image
+        \includegraphics[width=\textwidth,height=0.49\textheight,keepaspectratio]{#2}
+    \end{figure}
+    \restoregeometry % Restore the original geometry
+}
+
+% Define a command for 2 horizontal images with large margins
+\newcommand{\twoImagesLargeMargins}[2]{%
+    \newgeometry{margin=2cm} % Remove margins
+    \begin{figure}[h]
+        \centering
+        % First horizontal image
+        \includegraphics[width=\textwidth,height=0.49\textheight,keepaspectratio]{#1}
+        % Second horizontal image
+        \includegraphics[width=\textwidth,height=0.49\textheight,keepaspectratio]{#2}
+    \end{figure}
+    \restoregeometry % Restore the original geometry
+}
+
+\newcommand{\twoLandscapeFullPage}[2]{%
+    \newgeometry{margin=0cm} % Remove all margins
+    \begin{figure}[t]
+        \centering
+        \includegraphics[width=\textwidth,height=0.48\textheight,keepaspectratio]{#1} \\[0.01\textheight] % Top image
+        \includegraphics[width=\textwidth,height=0.48\textheight,keepaspectratio]{#2} % Bottom image
+    \end{figure}
+    \restoregeometry
+}
+
+% Command for two portrait images at the top of the page with text below
+\newcommand{\twoPortraitTopPage}[2]{
+    \begin{figure}[h]
+        \centering
+        \begin{minipage}{0.49\textwidth} % First image (left)
+            \centering
+            \includegraphics[width=\textwidth]{#1}
+        \end{minipage}
+        \hfill % Space between images
+        \begin{minipage}{0.49\textwidth} % Second image (right)
+            \centering
+            \includegraphics[width=\textwidth]{#2}
+        \end{minipage}
+    \end{figure}
+    \vspace{0.5cm} % Optional: Add vertical space between images and text
+}
+
+% Command for two portrait images stacked vertically 
+\newcommand{\twoPortraitStackedTopPage}[2]{%
+    \begin{figure}[t!] % Force to top of the page
+        \centering
+        % First image
+        \includegraphics[width=0.58\textwidth]{#1}
+        %\hfill % Space between images
+        % Second image
+        \includegraphics[width=0.58\textwidth]{#2}
+    \end{figure}
+    \vspace{0.5cm} % Optional: vertical space before text resumes
+}

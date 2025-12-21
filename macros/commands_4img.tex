@@ -1,0 +1,30 @@
+% Define a command for four portrait images in two rows with 0.5cm margin
+\newcommand{\fourPortraitImages}[4]{%
+    \newgeometry{margin=1cm} % Set custom margin
+    \begin{figure}[b]
+        \centering
+        % First row of portrait images
+        \begin{minipage}[b]{0.49\textwidth}
+            \centering
+            \includegraphics[width=\textwidth]{#1}
+        \end{minipage}
+        \hfill
+        \begin{minipage}[b]{0.49\textwidth}
+            \centering
+            \includegraphics[width=\textwidth]{#2}
+        \end{minipage}
+
+        % Second row of portrait images
+        \vspace{0.5cm} % Optional vertical space between rows
+        \begin{minipage}[b]{0.49\textwidth}
+            \centering
+            \includegraphics[width=\textwidth]{#3}
+        \end{minipage}
+        \hfill
+        \begin{minipage}[b]{0.49\textwidth}
+            \centering
+            \includegraphics[width=\textwidth]{#4}
+        \end{minipage}
+    \end{figure}
+    \restoregeometry % Restore original margins
+}

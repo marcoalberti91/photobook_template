@@ -1,0 +1,60 @@
+\newcommand{\eightLandscapeImages}[8]{%
+    \newgeometry{
+        hmargin={3mm,3mm},
+        vmargin={3mm,3mm},  
+    } 
+    \vspace*{0} % Start content at the top of the page
+    \begin{figure}[t!] % Force the figure to be at the top of the page
+        \centering
+        % Row 1
+        \begin{minipage}[b]{0.46\textwidth} % 49.5% width to fit 2 images
+            \centering
+            \includegraphics[width=\textwidth,height=0.24\textheight,keepaspectratio]{#1}
+        \end{minipage}
+        \hspace{0.0001\textwidth}
+        \begin{minipage}[b]{0.46\textwidth}
+            \centering
+            \includegraphics[width=\textwidth,height=0.24\textheight,keepaspectratio]{#2}
+        \end{minipage}
+
+        \vspace{0.3cm} % Space between rows
+
+        % Row 2
+        \begin{minipage}[b]{0.46\textwidth} % 49.5% width to fit 2 images
+            \centering
+            \includegraphics[width=\textwidth,height=0.24\textheight,keepaspectratio]{#3}
+        \end{minipage}
+        \hspace{0.0001\textwidth}
+        \begin{minipage}[b]{0.46\textwidth}
+            \centering
+            \includegraphics[width=\textwidth,height=0.24\textheight,keepaspectratio]{#4}
+        \end{minipage}
+
+        \vspace{0.3cm} % Space between rows
+
+        % Row 3
+        \begin{minipage}[b]{0.46\textwidth} % 49.5% width to fit 2 images
+            \centering
+            \includegraphics[width=\textwidth,height=0.24\textheight,keepaspectratio]{#5}
+        \end{minipage}
+        \hspace{0.0001\textwidth}
+        \begin{minipage}[b]{0.46\textwidth}
+            \centering
+            \includegraphics[width=\textwidth,height=0.24\textheight,keepaspectratio]{#6}
+        \end{minipage}
+
+        \vspace{0.3cm} % Space between rows
+
+        % Row 4
+        \begin{minipage}[b]{0.46\textwidth} % 49.5% width to fit 2 images
+            \centering
+            \includegraphics[width=\textwidth,height=0.24\textheight,keepaspectratio]{#7}
+        \end{minipage}
+        \hspace{0.0001\textwidth}
+        \begin{minipage}[b]{0.46\textwidth}
+            \centering
+            \includegraphics[width=\textwidth,height=0.24\textheight,keepaspectratio]{#8}
+        \end{minipage}
+    \end{figure}
+    \restoregeometry
+}
