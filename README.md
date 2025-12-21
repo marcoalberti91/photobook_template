@@ -132,6 +132,41 @@ If you prefer a GUI, use one of these free editors:
 - **Overleaf** (online): https://www.overleaf.com/
 - **Visual Studio Code** with LaTeX Workshop extension
 
+## PDF Color Conversion for Printing
+
+After compiling your LaTeX to PDF, you may need to convert it to CMYK format for professional printing services. 
+
+### Quick Conversion Scripts
+
+Two automated scripts are provided in the `scripts/` directory to convert your PDF for professional printing:
+
+**Step 1: Convert to Adobe RGB**
+```bash
+bash scripts/convert_to_rgb.sh main.pdf
+```
+Output: `intermediate_rgb.pdf`
+
+**Step 2: Convert to CMYK FOGRA39** (for professional printing)
+```bash
+bash scripts/convert_to_cmyk.sh intermediate_rgb.pdf
+```
+Output: `output_fogra39.pdf`
+
+**Or use the one-step automation:**
+```bash
+bash scripts/compile_and_convert.sh main
+```
+This compiles LaTeX and performs both color conversions automatically.
+
+### Prerequisites
+
+Ghostscript is required for color conversion. Install it:
+- **macOS**: `brew install ghostscript`
+- **Linux**: `sudo apt install ghostscript`
+- **Windows**: Download from https://ghostscript.com/releases
+
+For detailed information about color profiles, ICC settings, and troubleshooting, see [COLORS.md](COLORS.md).
+
 ## Creating Your Photobook
 
 ### 1. Add Images
