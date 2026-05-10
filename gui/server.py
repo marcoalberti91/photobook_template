@@ -60,6 +60,25 @@ def tex_escape(text: str) -> str:
         text = text.replace(char, escaped)
     return text
 
+def tex_unescape(text: str) -> str:
+    """Reverse tex_escape so form fields show plain text, not LaTeX commands."""
+    # Apply in reverse order (longest sequences first to avoid partial matches)
+    pairs = [
+        (r'\textbackslash{}', '\\'),
+        (r'\textasciitilde{}', '~'),
+        (r'\^{}', '^'),
+        (r'\{', '{'),
+        (r'\}', '}'),
+        (r'\$', '$'),
+        (r'\&', '&'),
+        (r'\#', '#'),
+        (r'\%', '%'),
+        (r'\_', '_'),
+    ]
+    for escaped, char in pairs:
+        text = text.replace(escaped, char)
+    return text
+
 def label_slug(slug: str) -> str:
     """Make a section slug safe for use inside \\label{}."""
     return re.sub(r'[^a-zA-Z0-9-]', '-', slug)
@@ -118,6 +137,10 @@ class Handler(BaseHTTPRequestHandler):
         elif path == "/images":    self._json(self._list_images())
         elif path == "/sections":  self._json(self._list_sections())
         elif path == "/page-map":  self._json(self._page_map())
+        elif path == "/log":
+            log = ROOT / "main.log"
+            txt = log.read_text(encoding="utf-8", errors="replace") if log.exists() else ""
+            self._send(200, "text/plain; charset=utf-8", txt.encode("utf-8"))
         elif path == "/header":
             self._json(self._get_header(unquote(q.get("section", [""])[0])))
         elif path == "/pages":
@@ -293,44 +316,44 @@ class Handler(BaseHTTPRequestHandler):
              "portrait_images": [], "text_date": "", "text": ""}
 
         m = re.search(r'\\textbf\{Day\s+([^}]+)\}', header)
-        if m: r["day"] = m.group(1).strip()
+        if m: r["day"] = tex_unescape(m.group(1).strip())
 
         # title: token between first and second \textbar\
         m = re.search(r'\\textbf\{Day[^}]+\}\s*\\textbar\\\s+(.*?)\s*\\textbar\\', header, re.DOTALL)
-        if m: r["title"] = m.group(1).strip()
+        if m: r["title"] = tex_unescape(m.group(1).strip())
 
         # date: DD Month YYYY anywhere in the title line
         m = re.search(r'\b(\d{1,2}\s+\w+\s+\d{4})\b', header)
-        if m: r["date"] = m.group(1).strip()
+        if m: r["date"] = tex_unescape(m.group(1).strip())
 
         # city, country: after last \textbar\ → \textbf{CITY}, COUNTRY}
         m = re.search(r'\\textbar\\\s+\\textbf\{([^}]+)\},\s*([^}\n]+)', header)
         if m:
-            r["city"]    = m.group(1).strip()
-            r["country"] = m.group(2).strip()
+            r["city"]    = tex_unescape(m.group(1).strip())
+            r["country"] = tex_unescape(m.group(2).strip())
 
-        # flag image: first includegraphics inside a minipage
+        # flag image: first includegraphics inside a minipage (path — no unescape)
         m = re.search(
             r'\\begin\{minipage\}.*?\\includegraphics\[width=\\textwidth\]\{([^}]+)\}',
             header, re.DOTALL)
         if m: r["flag_image"] = m.group(1).strip()
 
         m = re.search(r'\\textbf\{Superficie\}:\s*([^\\\n]+)', header)
-        if m: r["superficie"] = m.group(1).strip()
+        if m: r["superficie"] = tex_unescape(m.group(1).strip())
 
         m = re.search(r'\\textbf\{Popolazione\}:\s*([^\\\n]+)', header)
-        if m: r["popolazione"] = m.group(1).strip()
+        if m: r["popolazione"] = tex_unescape(m.group(1).strip())
 
         m = re.search(r'\\textit\{([^}]+)\}', header)
-        if m: r["description"] = m.group(1).strip()
+        if m: r["description"] = tex_unescape(m.group(1).strip())
 
         r["portrait_images"] = re.findall(r'\\portraitLargeMargin\{([^}]+)\}', header)
 
         # text block: after \noindent DATE \newline \newline
         m = re.search(r'\\noindent\s+(.*?)\\newline\s*\\newline\s*\n(.*?)$', header, re.DOTALL)
         if m:
-            r["text_date"] = m.group(1).strip()
-            r["text"]      = m.group(2).strip()
+            r["text_date"] = tex_unescape(m.group(1).strip())
+            r["text"]      = tex_unescape(m.group(2).strip())
 
         return r
 
@@ -420,8 +443,18 @@ class Handler(BaseHTTPRequestHandler):
             secs = round(time.time() - t0, 1)
             if r.returncode == 0:
                 return {"ok": True, "seconds": secs}
-            errors = [l for l in r.stdout.splitlines() if l.startswith("!")]
-            return {"ok": False, "error": "\n".join(errors) or r.stdout[-600:], "seconds": secs}
+            # Prefer main.log (richer context with file names) over stdout
+            log_file = ROOT / "main.log"
+            raw = (log_file.read_text(encoding="utf-8", errors="replace")
+                   if log_file.exists() else r.stdout)
+            lines = raw.splitlines()
+            snippets = []
+            for i, line in enumerate(lines):
+                if line.startswith("!"):
+                    ctx = lines[max(0, i-2):i+8]
+                    snippets.append("\n".join(ctx))
+            error_text = "\n\n---\n\n".join(snippets) if snippets else raw[-1000:]
+            return {"ok": False, "error": error_text, "seconds": secs}
         except FileNotFoundError:
             return {"ok": False, "error": "pdflatex non trovato — installa MacTeX: https://tug.org/mactex/"}
         except subprocess.TimeoutExpired:
