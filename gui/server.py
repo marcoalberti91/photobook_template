@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """
-Photobook Builder — server senza dipendenze esterne
-Usa solo la libreria standard di Python 3.
+Photobook Builder — server senza dipendenze esterne (stdlib Python 3).
 
 Avvio:
     python gui/server.py          (dalla root del progetto)
@@ -13,7 +12,7 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 from pathlib import Path
 from urllib.parse import urlparse, parse_qs, unquote
 
-# ── Trova la root del progetto (contiene main.tex) ───────────────────────
+# ── Trova la root del progetto ────────────────────────────────────────────
 def find_root():
     for d in [Path.cwd(),
               Path(__file__).resolve().parent,
@@ -31,21 +30,44 @@ GUI  = Path(__file__).resolve().parent
 print(f"\n  📁  Progetto : {ROOT}")
 print(f"  🌐  Apri     : http://localhost:5555\n")
 
-# ── Pattern per \include{sections/SLUG} in main.tex ─────────────────────
-_RE_ACTIVE   = re.compile(r'^(\s*)\\include\{sections/([^}]+)\}(.*)', re.MULTILINE)
-_RE_INACTIVE = re.compile(r'^(\s*)%\s*\\include\{sections/([^}]+)\}(.*)', re.MULTILINE)
-_RE_ANY      = re.compile(r'^\s*%?\s*\\include\{sections/[^}]+\}', re.MULTILINE)
-_RE_END_DOC  = re.compile(r'^\s*\\end\{document\}', re.MULTILINE)
+# ── Costanti regex ────────────────────────────────────────────────────────
+_CLEARPAGE_RE = re.compile(r'\n[ \t]*\\clearpage[ \t]*\n')
+_RE_ACTIVE    = re.compile(r'^\s*\\include\{sections/([^}]+)\}',  re.MULTILINE)
+_RE_INACTIVE  = re.compile(r'^\s*%\s*\\include\{sections/([^}]+)\}', re.MULTILINE)
+_RE_ANY_INC   = re.compile(r'^\s*%?\s*\\include\{sections/[^}]+\}', re.MULTILINE)
+_RE_END_DOC   = re.compile(r'^\s*\\end\{document\}', re.MULTILINE)
+_IMAGE_EXTS   = {'.jpg', '.jpeg', '.png', '.webp', '.tiff'}
 
 
-def _read_main():
-    return (ROOT / "main.tex").read_text(encoding="utf-8")
+# ── Helpers per la gestione di pagine nei file .tex ───────────────────────
+def split_pages(content: str):
+    """Restituisce (header, [page_blocks]) separati da \\clearpage."""
+    parts = _CLEARPAGE_RE.split(content)
+    return parts[0], parts[1:]
 
-def _write_main(content: str):
-    (ROOT / "main.tex").write_text(content, encoding="utf-8")
 
-def _active_slugs(content: str) -> set:
-    return {m.group(2) for m in _RE_ACTIVE.finditer(content)}
+def join_pages(header: str, pages: list) -> str:
+    if not pages:
+        return header
+    return "\n\\clearpage\n".join([header] + pages)
+
+
+def extract_command(block: str) -> str | None:
+    m = re.match(r'\s*\\([a-zA-Z]+)', block)
+    return m.group(1) if m else None
+
+
+def extract_images(block: str) -> list:
+    candidates = re.findall(r'\{([^}]+)\}', block)
+    return [c.strip() for c in candidates
+            if c.strip() and Path(c.strip()).suffix.lower() in _IMAGE_EXTS]
+
+
+# ── Helpers per main.tex ──────────────────────────────────────────────────
+def read_main()  -> str:  return (ROOT / "main.tex").read_text(encoding="utf-8")
+def write_main(c: str):   (ROOT / "main.tex").write_text(c, encoding="utf-8")
+def active_slugs(c: str) -> set:
+    return {m.group(1) for m in _RE_ACTIVE.finditer(c)}
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -55,18 +77,16 @@ class Handler(BaseHTTPRequestHandler):
 
     # ── Router ────────────────────────────────────────────────────────
     def do_GET(self):
-        parsed = urlparse(self.path)
-        q      = parse_qs(parsed.query)
-        path   = parsed.path
+        p = urlparse(self.path)
+        q = parse_qs(p.query)
+        path = p.path
 
-        routes = {
-            "/":         lambda: self._file(GUI / "photobook-builder.html", "text/html"),
-            "/pdf":      self._pdf,
-            "/images":   lambda: self._json(self._list_images()),
-            "/sections": lambda: self._json(self._list_sections()),
-        }
-        if path in routes:
-            routes[path]()
+        if   path == "/":         self._file(GUI / "photobook-builder.html", "text/html")
+        elif path == "/pdf":      self._pdf()
+        elif path == "/images":   self._json(self._list_images())
+        elif path == "/sections": self._json(self._list_sections())
+        elif path == "/pages":
+            self._json(self._list_pages(unquote(q.get("section", [""])[0])))
         elif path == "/image":
             self._image(unquote(q.get("path", [""])[0]))
         else:
@@ -75,19 +95,20 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         length = int(self.headers.get("Content-Length", 0))
         body   = self.rfile.read(length)
-        try:
-            data = json.loads(body) if body else {}
-        except json.JSONDecodeError:
-            data = {}
+        try:   data = json.loads(body) if body else {}
+        except json.JSONDecodeError: data = {}
 
         routes = {
-            "/insert":         lambda: self._json(self._insert(data)),
-            "/compile":        lambda: self._json(self._compile()),
-            "/new-chapter":    lambda: self._json(self._new_chapter(data)),
-            "/toggle-section": lambda: self._json(self._toggle_section(data)),
+            "/insert":         lambda: self._insert(data),
+            "/compile":        lambda: self._compile(),
+            "/new-chapter":    lambda: self._new_chapter(data),
+            "/toggle-section": lambda: self._toggle_section(data),
+            "/update-page":    lambda: self._update_page(data),
+            "/delete-page":    lambda: self._delete_page(data),
         }
-        if self.path in routes:
-            routes[self.path]()
+        fn = routes.get(self.path)
+        if fn:
+            self._json(fn())
         else:
             self._send(404, "text/plain", b"Not found")
 
@@ -108,8 +129,7 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write(data)
 
     def _image(self, rel):
-        if not rel:
-            self._send(400, "text/plain", b"Missing path"); return
+        if not rel: self._send(400, "text/plain", b"Missing path"); return
         full = (ROOT / rel).resolve()
         if not str(full).startswith(str(ROOT)) or not full.exists():
             self._send(404, "text/plain", b"Not found"); return
@@ -123,8 +143,7 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write(data)
 
     def _file(self, path: Path, mime: str):
-        if not path.exists():
-            self._send(404, "text/plain", b"Not found"); return
+        if not path.exists(): self._send(404, "text/plain", b"Not found"); return
         data = path.read_bytes()
         self.send_response(200)
         self.send_header("Content-Type", mime)
@@ -134,11 +153,10 @@ class Handler(BaseHTTPRequestHandler):
 
     def _list_images(self):
         imgs_dir = ROOT / "images"
-        if not imgs_dir.exists():
-            return []
+        if not imgs_dir.exists(): return []
         result, seen = [], set()
         for f in sorted(imgs_dir.rglob("*")):
-            if f.is_file() and f.suffix.lower() in (".jpg", ".jpeg", ".png", ".webp", ".tiff"):
+            if f.is_file() and f.suffix.lower() in _IMAGE_EXTS:
                 rel = str(f.relative_to(ROOT)).replace("\\", "/")
                 if rel not in seen:
                     seen.add(rel)
@@ -146,20 +164,31 @@ class Handler(BaseHTTPRequestHandler):
         return result
 
     def _list_sections(self):
-        """Return [{name, active}] — active = not commented out in main.tex."""
         d = ROOT / "sections"
-        if not d.exists():
-            return []
-        content = _read_main()
-        active  = _active_slugs(content)
-        return [
-            {"name": f.name, "active": f.stem in active}
-            for f in sorted(d.glob("*.tex"))
-        ]
+        if not d.exists(): return []
+        content = read_main()
+        active  = active_slugs(content)
+        return [{"name": f.name, "active": f.stem in active}
+                for f in sorted(d.glob("*.tex"))]
+
+    def _list_pages(self, section_name: str) -> list:
+        """Return [{index, command, images}] for pages added via the builder."""
+        if not section_name: return []
+        path = ROOT / "sections" / Path(section_name).name
+        if not path.exists(): return []
+        _, pages = split_pages(path.read_text(encoding="utf-8"))
+        result = []
+        for i, block in enumerate(pages):
+            block = block.strip()
+            result.append({
+                "index":   i,
+                "command": extract_command(block),
+                "images":  extract_images(block),
+            })
+        return result
 
     # ── POST handlers ─────────────────────────────────────────────────
-    def _insert(self, data):
-        """Append a LaTeX layout command to a section file, preceded by \clearpage."""
+    def _insert(self, data) -> dict:
         section = data.get("section", "").strip()
         latex   = data.get("latex",   "").strip()
         if not section or not latex:
@@ -171,13 +200,45 @@ class Handler(BaseHTTPRequestHandler):
             fh.write(f"\n\\clearpage\n{latex}\n")
         return {"ok": True}
 
-    def _compile(self):
+    def _update_page(self, data) -> dict:
+        section = data.get("section", "").strip()
+        index   = data.get("index")
+        latex   = data.get("latex",   "").strip()
+        if not section or not latex or index is None:
+            return {"ok": False, "error": "Campi mancanti"}
+        path = ROOT / "sections" / Path(section).name
+        if not path.exists():
+            return {"ok": False, "error": f"File non trovato: {section}"}
+        content = path.read_text(encoding="utf-8")
+        header, pages = split_pages(content)
+        if not (0 <= index < len(pages)):
+            return {"ok": False, "error": f"Indice pagina non valido: {index}"}
+        pages[index] = latex
+        path.write_text(join_pages(header, pages), encoding="utf-8")
+        return {"ok": True}
+
+    def _delete_page(self, data) -> dict:
+        section = data.get("section", "").strip()
+        index   = data.get("index")
+        if not section or index is None:
+            return {"ok": False, "error": "Campi mancanti"}
+        path = ROOT / "sections" / Path(section).name
+        if not path.exists():
+            return {"ok": False, "error": f"File non trovato: {section}"}
+        content = path.read_text(encoding="utf-8")
+        header, pages = split_pages(content)
+        if not (0 <= index < len(pages)):
+            return {"ok": False, "error": f"Indice pagina non valido: {index}"}
+        del pages[index]
+        path.write_text(join_pages(header, pages), encoding="utf-8")
+        return {"ok": True}
+
+    def _compile(self) -> dict:
         t0 = time.time()
         try:
             r = subprocess.run(
                 ["pdflatex", "-interaction=nonstopmode", "-halt-on-error", "main.tex"],
-                cwd=ROOT, capture_output=True, text=True, timeout=120,
-            )
+                cwd=ROOT, capture_output=True, text=True, timeout=120)
             secs = round(time.time() - t0, 1)
             if r.returncode == 0:
                 return {"ok": True, "seconds": secs}
@@ -186,26 +247,18 @@ class Handler(BaseHTTPRequestHandler):
         except FileNotFoundError:
             return {"ok": False, "error": "pdflatex non trovato — installa MacTeX: https://tug.org/mactex/"}
         except subprocess.TimeoutExpired:
-            return {"ok": False, "error": "Timeout compilazione (>120 s)"}
+            return {"ok": False, "error": "Timeout (>120 s)"}
         except Exception as e:
             return {"ok": False, "error": str(e)}
 
-    def _new_chapter(self, data):
-        """Create a new section .tex file and register it in main.tex."""
-        raw = data.get("name", "").strip()
-        if not raw:
-            return {"ok": False, "error": "Nome vuoto"}
-
-        # Sanitise: keep only alphanumeric, hyphens, underscores
+    def _new_chapter(self, data) -> dict:
+        raw  = data.get("name", "").strip()
+        if not raw: return {"ok": False, "error": "Nome vuoto"}
         slug = re.sub(r"[^a-zA-Z0-9_-]", "_", raw).strip("_")
-        if not slug:
-            return {"ok": False, "error": "Nome non valido (usa solo lettere, numeri, - _)"}
-
+        if not slug: return {"ok": False, "error": "Nome non valido"}
         filepath = ROOT / "sections" / f"{slug}.tex"
         if filepath.exists():
-            return {"ok": False, "error": f"Il file {slug}.tex esiste già"}
-
-        # Write section file with header template
+            return {"ok": False, "error": f"{slug}.tex esiste già"}
         template = (
             r"\begin{center}" + "\n"
             r"    {\large \textbf{Day X} \textbar\ Title \textbar\ 01 January 2020 \textbar\ \textbf{City}, Country}" + "\n"
@@ -213,63 +266,45 @@ class Handler(BaseHTTPRequestHandler):
             r"\noindent\rule{\textwidth}{0.4pt}" + "\n"
         )
         filepath.write_text(template, encoding="utf-8")
-
-        # Insert \include{sections/SLUG} into main.tex
-        content = _read_main()
+        # Insert \include into main.tex after last existing \include
+        content = read_main()
         lines   = content.splitlines(keepends=True)
-
-        # Find insertion point: after last \include{sections/...} line
-        last_include = -1
-        end_doc      = -1
+        last_inc, end_doc = -1, -1
         for i, line in enumerate(lines):
-            if _RE_ANY.match(line):
-                last_include = i
-            if _RE_END_DOC.match(line):
-                end_doc = i
-
-        insert_after = last_include if last_include >= 0 else max(end_doc - 1, 0)
+            if _RE_ANY_INC.match(line):  last_inc = i
+            if _RE_END_DOC.match(line):  end_doc  = i
+        insert_after = last_inc if last_inc >= 0 else max(end_doc - 1, 0)
         lines.insert(insert_after + 1, f"\\include{{sections/{slug}}}\n")
-        _write_main("".join(lines))
-
+        write_main("".join(lines))
         return {"ok": True, "name": f"{slug}.tex", "slug": slug}
 
-    def _toggle_section(self, data):
-        """Comment or uncomment a \\include{sections/SLUG} line in main.tex."""
-        section = data.get("section", "").strip()   # e.g. "day1.tex"
+    def _toggle_section(self, data) -> dict:
+        section = data.get("section", "").strip()
         active  = bool(data.get("active", True))
         slug    = section.replace(".tex", "")
-        if not slug:
-            return {"ok": False, "error": "Section mancante"}
-
-        content = _read_main()
-        lines   = content.splitlines(keepends=True)
-        found   = False
+        if not slug: return {"ok": False, "error": "Section mancante"}
+        content   = read_main()
+        lines     = content.splitlines(keepends=True)
         new_lines = []
+        found     = False
+        pat_a = re.compile(r'^(\s*)\\include\{sections/' + re.escape(slug) + r'\}(.*\n?)')
+        pat_i = re.compile(r'^(\s*)%\s*\\include\{sections/' + re.escape(slug) + r'\}(.*\n?)')
         for line in lines:
-            ma = re.match(r'^(\s*)\\include\{sections/' + re.escape(slug) + r'\}(.*\n?)', line)
-            mi = re.match(r'^(\s*)%\s*\\include\{sections/' + re.escape(slug) + r'\}(.*\n?)', line)
+            ma, mi = pat_a.match(line), pat_i.match(line)
             if ma:
                 found = True
-                if active:
-                    new_lines.append(line)
-                else:
-                    new_lines.append(f"{ma.group(1)}% \\include{{sections/{slug}}}{ma.group(2)}")
+                new_lines.append(line if active else f"{ma.group(1)}% \\include{{sections/{slug}}}{ma.group(2)}")
             elif mi:
                 found = True
-                if active:
-                    new_lines.append(f"{mi.group(1)}\\include{{sections/{slug}}}{mi.group(2)}")
-                else:
-                    new_lines.append(line)
+                new_lines.append(f"{mi.group(1)}\\include{{sections/{slug}}}{mi.group(2)}" if active else line)
             else:
                 new_lines.append(line)
-
         if not found:
             return {"ok": False, "error": f"{slug} non trovato in main.tex"}
-
-        _write_main("".join(new_lines))
+        write_main("".join(new_lines))
         return {"ok": True}
 
-    # ── Helpers ───────────────────────────────────────────────────────
+    # ── Low-level response helpers ─────────────────────────────────────
     def _send(self, code, mime, body: bytes):
         self.send_response(code)
         self.send_header("Content-Type", mime)

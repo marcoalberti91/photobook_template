@@ -25,32 +25,23 @@
       background: var(--bg);
       color: var(--text);
       height: 100vh;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-      font-size: 13px;
+      display: flex; flex-direction: column;
+      overflow: hidden; font-size: 13px;
     }
 
     /* ── Header ─────────────────────────────────────────────────────── */
     header {
-      background: var(--panel);
-      border-bottom: 1px solid var(--border);
-      padding: 9px 14px;
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      flex-shrink: 0;
+      background: var(--panel); border-bottom: 1px solid var(--border);
+      padding: 9px 14px; display: flex; align-items: center; gap: 14px; flex-shrink: 0;
     }
     .logo { font-size: 15px; font-weight: 700; color: var(--accent); white-space: nowrap; }
     .sub  { color: var(--muted); font-size: 11px; }
     .server-badge {
-      margin-left: auto;
-      display: flex; align-items: center; gap: 6px;
+      margin-left: auto; display: flex; align-items: center; gap: 6px;
       font-size: 11px; font-weight: 600; color: var(--muted);
     }
     .server-badge .dot {
-      width: 8px; height: 8px; border-radius: 50%;
-      background: var(--muted); flex-shrink: 0;
+      width: 8px; height: 8px; border-radius: 50%; background: var(--muted); flex-shrink: 0;
     }
     .server-badge.online  .dot  { background: var(--success); box-shadow: 0 0 6px var(--success); }
     .server-badge.online  .slbl { color: var(--success); }
@@ -60,36 +51,28 @@
     /* ── Workspace ───────────────────────────────────────────────────── */
     .workspace { flex: 1; display: flex; overflow: hidden; min-height: 0; }
 
-    /* ── Shared panel head ───────────────────────────────────────────── */
     .panel-head {
-      font-size: 10px; font-weight: 700;
-      text-transform: uppercase; letter-spacing: 0.08em;
-      color: var(--muted);
-      padding: 7px 10px 6px;
-      border-bottom: 1px solid var(--border);
-      display: flex; align-items: center; justify-content: space-between;
-      flex-shrink: 0;
+      font-size: 10px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.08em; color: var(--muted);
+      padding: 7px 10px 6px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
     }
     .icon-btn {
       background: none; border: none; color: var(--muted);
-      cursor: pointer; font-size: 14px; padding: 0 2px; line-height: 1;
-      transition: color 0.12s;
+      cursor: pointer; font-size: 14px; padding: 0 2px; line-height: 1; transition: color 0.12s;
     }
     .icon-btn:hover { color: var(--accent); }
 
-    /* ── Left: Layouts ───────────────────────────────────────────────── */
+    /* ── Layouts panel ───────────────────────────────────────────────── */
     .layouts-panel {
-      width: 168px; min-width: 168px;
-      background: var(--panel);
+      width: 168px; min-width: 168px; background: var(--panel);
       border-right: 1px solid var(--border);
       display: flex; flex-direction: column; overflow: hidden;
     }
     .layouts-scroll { flex: 1; overflow-y: auto; padding: 6px 5px 16px; }
-
     .section-title {
-      font-size: 10px; font-weight: 700;
-      text-transform: uppercase; letter-spacing: 0.09em;
-      color: var(--muted); padding: 10px 6px 4px;
+      font-size: 10px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.09em; color: var(--muted); padding: 10px 6px 4px;
     }
     .layout-card {
       display: flex; align-items: center; gap: 8px;
@@ -102,34 +85,83 @@
     .layout-thumb svg { width: 34px; height: 48px; display: block; flex-shrink: 0; border-radius: 2px; }
     .layout-name { font-size: 11px; line-height: 1.4; }
 
-    /* ── PDF viewer ──────────────────────────────────────────────────── */
+    /* ── PDF panel ───────────────────────────────────────────────────── */
     .pdf-panel {
-      width: 300px; min-width: 260px;
-      background: #0a0a18; border-right: 1px solid var(--border);
+      width: 300px; min-width: 260px; background: #0a0a18;
+      border-right: 1px solid var(--border);
       display: flex; flex-direction: column; overflow: hidden;
     }
     .pdf-wrap { flex: 1; position: relative; overflow: hidden; }
     #pdf-frame { width: 100%; height: 100%; border: none; display: none; }
     .pdf-placeholder {
-      position: absolute; inset: 0;
-      display: flex; flex-direction: column;
+      position: absolute; inset: 0; display: flex; flex-direction: column;
       align-items: center; justify-content: center;
       color: var(--muted); font-size: 12px; text-align: center; line-height: 2; gap: 8px;
     }
     .pdf-placeholder .icon { font-size: 32px; }
 
-    /* ── Canvas ──────────────────────────────────────────────────────── */
+    /* ── Canvas panel ────────────────────────────────────────────────── */
     .canvas-panel {
       flex: 1; min-width: 0;
       display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      padding: 20px 16px; gap: 10px; overflow: hidden;
+      align-items: center; overflow: hidden;
+      padding: 10px 16px 0;
+      gap: 0;
     }
+
+    /* Pages strip */
+    .pages-strip {
+      display: none;  /* shown only when section is selected */
+      flex-direction: row;
+      gap: 5px;
+      overflow-x: auto;
+      padding: 6px 0 8px;
+      width: 100%;
+      flex-shrink: 0;
+      align-items: center;
+    }
+    .pages-strip::-webkit-scrollbar { height: 3px; }
+
+    .page-chip {
+      display: flex; flex-direction: column; align-items: center;
+      padding: 5px 10px; border-radius: 8px;
+      border: 1px solid var(--border);
+      cursor: pointer; flex-shrink: 0;
+      font-size: 10px; line-height: 1.4; text-align: center; min-width: 64px;
+      transition: background 0.12s, border-color 0.12s, color 0.12s;
+      color: var(--muted); background: var(--panel);
+      user-select: none;
+    }
+    .page-chip:hover { border-color: var(--accent-dim); color: var(--text); }
+    .page-chip.active { background: var(--accent-bg); border-color: var(--accent); color: var(--accent); }
+    .page-chip.new-chip { border-style: dashed; }
+    .page-chip.active.new-chip { border-style: dashed; }
+    .chip-num  { font-weight: 700; font-size: 11px; }
+    .chip-cmd  { font-size: 9px; margin-top: 1px; opacity: 0.8; max-width: 80px;
+                 overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    /* Mode badge */
+    .mode-badge {
+      font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 10px;
+      margin-bottom: 6px; flex-shrink: 0; align-self: center;
+    }
+    .mode-badge.new-mode  { color: var(--accent); background: var(--accent-bg); }
+    .mode-badge.edit-mode { color: var(--warn);   background: #2d1e00; }
+
+    /* Canvas empty state */
     .empty-state {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
       text-align: center; color: var(--muted); font-size: 13px;
       line-height: 2; pointer-events: none;
     }
     .empty-arrow { font-size: 30px; margin-bottom: 4px; }
+
+    /* A4 canvas */
+    .canvas-center {
+      flex: 1; display: flex; align-items: center; justify-content: center;
+      min-height: 0; width: 100%;
+    }
     .page-shadow {
       box-shadow: 0 8px 40px rgba(0,0,0,0.7), 0 2px 12px rgba(0,0,0,0.4);
       flex-shrink: 0;
@@ -137,15 +169,16 @@
     #page-canvas { background: white; position: relative; overflow: hidden; display: block; }
 
     .slot {
-      position: absolute;
-      display: flex; align-items: center; justify-content: center; overflow: hidden;
+      position: absolute; display: flex; align-items: center; justify-content: center;
+      overflow: hidden;
       outline: 2px dashed rgba(124,58,237,0.4); outline-offset: -2px;
       transition: outline 0.1s, background 0.1s;
     }
     .slot.dragover { outline: 3px dashed var(--accent); background: rgba(167,139,250,0.13) !important; }
     .slot.filled   { outline: none; }
     .slot img      { width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none; }
-    .slot-num      { font-size: 15px; font-weight: 800; color: rgba(124,58,237,0.4); pointer-events: none; user-select: none; }
+    .slot-num      { font-size: 15px; font-weight: 800; color: rgba(124,58,237,0.4);
+                     pointer-events: none; user-select: none; }
     .slot-clear    {
       position: absolute; top: 5px; right: 5px;
       width: 22px; height: 22px; background: rgba(0,0,0,0.65); color: white;
@@ -154,9 +187,45 @@
       opacity: 0; transition: opacity 0.12s; z-index: 10;
     }
     .slot:hover .slot-clear { opacity: 1; }
-    .canvas-label { font-size: 11px; color: var(--muted); text-align: center; }
 
-    /* ── Images ──────────────────────────────────────────────────────── */
+    /* Canvas controls — below the canvas */
+    .canvas-controls {
+      display: flex; align-items: center; gap: 8px;
+      padding: 10px 0 10px; flex-shrink: 0; width: 100%;
+      border-top: 1px solid var(--border); margin-top: 10px;
+    }
+    .ctrl-label { font-size: 11px; color: var(--muted); white-space: nowrap; }
+    #section-select {
+      background: #1a1a35; color: var(--text);
+      border: 1px solid var(--border); border-radius: 5px;
+      padding: 5px 8px; font-size: 12px; cursor: pointer; max-width: 110px;
+    }
+    #section-select:focus { outline: none; border-color: var(--accent-dim); }
+    .ctrl-sep { flex: 1; }
+
+    #canvas-action-btn {
+      padding: 7px 16px; border-radius: 7px; font-size: 12px; font-weight: 700;
+      cursor: pointer; border: 1px solid; white-space: nowrap;
+      transition: background 0.12s, opacity 0.12s;
+      background: var(--accent-bg); color: var(--accent); border-color: var(--accent-dim);
+      min-width: 130px; text-align: center;
+    }
+    #canvas-action-btn:not(:disabled):hover { background: #2d1b69; }
+    #canvas-action-btn:disabled { opacity: 0.4; cursor: default; }
+    #canvas-action-btn.save-mode {
+      background: #0f2a1a; color: var(--success); border-color: #166534;
+    }
+    #canvas-action-btn.save-mode:not(:disabled):hover { background: #14382a; }
+
+    #canvas-delete-btn {
+      padding: 7px 12px; border-radius: 7px; font-size: 12px; font-weight: 600;
+      cursor: pointer; border: 1px solid var(--error);
+      background: #2a0d0d; color: var(--error); white-space: nowrap;
+      transition: background 0.12s;
+    }
+    #canvas-delete-btn:hover { background: #3a1212; }
+
+    /* ── Images panel ────────────────────────────────────────────────── */
     .images-panel {
       width: 200px; min-width: 180px; background: var(--panel);
       border-left: 1px solid var(--border);
@@ -188,72 +257,49 @@
 
     /* ── Chapters bar ────────────────────────────────────────────────── */
     .chapters-bar {
-      background: var(--panel);
-      border-top: 1px solid var(--border);
-      padding: 7px 14px;
-      display: flex; align-items: center; gap: 10px;
-      flex-shrink: 0; min-height: 40px; flex-wrap: wrap;
+      background: var(--panel); border-top: 1px solid var(--border);
+      padding: 7px 14px; display: flex; align-items: center; gap: 10px;
+      flex-shrink: 0; min-height: 42px; flex-wrap: wrap;
     }
-    .bar-label { font-size: 10px; font-weight: 700; text-transform: uppercase;
-                 letter-spacing: 0.08em; color: var(--muted); white-space: nowrap; }
-
-    .chapter-chips { display: flex; gap: 5px; flex-wrap: wrap; flex: 1; }
-
+    .bar-label {
+      font-size: 10px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.08em; color: var(--muted); white-space: nowrap;
+    }
+    .chapter-chips { display: flex; gap: 5px; flex-wrap: wrap; }
     .chapter-chip {
       display: inline-flex; align-items: center; gap: 5px;
       padding: 3px 9px; border-radius: 12px; cursor: pointer;
-      font-size: 11px; font-weight: 600;
-      border: 1px solid var(--border);
-      transition: background 0.12s, border-color 0.12s, color 0.12s;
-      user-select: none; white-space: nowrap;
+      font-size: 11px; font-weight: 600; border: 1px solid var(--border);
+      transition: all 0.12s; user-select: none; white-space: nowrap;
     }
     .chapter-chip.on  { background: var(--accent-bg); border-color: var(--accent-dim); color: var(--accent); }
     .chapter-chip.off { background: transparent; color: var(--muted); }
+    .chip-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
     .chapter-chip.on  .chip-dot { background: var(--accent); }
     .chapter-chip.off .chip-dot { background: var(--muted); }
-    .chip-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
-
-    .new-chapter-form { display: flex; gap: 5px; align-items: center; margin-left: auto; }
+    .new-chapter-form { display: flex; gap: 5px; align-items: center; }
     .chapter-input {
       background: #1a1a35; color: var(--text); border: 1px solid var(--border);
-      border-radius: 5px; padding: 4px 8px; font-size: 11px; width: 120px;
+      border-radius: 5px; padding: 4px 8px; font-size: 11px; width: 110px;
     }
     .chapter-input:focus { outline: none; border-color: var(--accent-dim); }
     .chapter-input::placeholder { color: var(--muted); }
     .create-btn {
       padding: 4px 10px; border-radius: 5px; font-size: 11px; font-weight: 600;
       background: var(--accent-bg); color: var(--accent);
-      border: 1px solid var(--accent-dim); cursor: pointer;
-      transition: background 0.12s; white-space: nowrap;
+      border: 1px solid var(--accent-dim); cursor: pointer; transition: background 0.12s;
     }
     .create-btn:hover { background: #2d1b69; }
-
-    /* ── Action bar ──────────────────────────────────────────────────── */
-    .action-bar {
-      background: #0f0f1c;
-      border-top: 1px solid var(--border);
-      padding: 7px 14px;
-      display: flex; align-items: center; gap: 10px; flex-shrink: 0;
+    .chapters-sep { flex: 1; }
+    #compile-btn {
+      padding: 5px 14px; border-radius: 6px; font-size: 12px; font-weight: 600;
+      cursor: pointer; border: 1px solid #166534;
+      background: #0f2a1a; color: var(--success); white-space: nowrap;
+      transition: background 0.12s, opacity 0.12s;
     }
-    .action-label { font-size: 11px; color: var(--muted); white-space: nowrap; }
-    #section-select {
-      background: #1a1a35; color: var(--text);
-      border: 1px solid var(--border); border-radius: 5px;
-      padding: 5px 8px; font-size: 12px; cursor: pointer;
-    }
-    #section-select:focus { outline: none; border-color: var(--accent-dim); }
-    .action-sep { flex: 1; }
-    .action-btn {
-      padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 600;
-      cursor: pointer; border: 1px solid; transition: background 0.12s, opacity 0.12s;
-      white-space: nowrap;
-    }
-    .action-btn:disabled { opacity: 0.4; cursor: default; }
-    #insert-btn  { background: var(--accent-bg); color: var(--accent); border-color: var(--accent-dim); }
-    #insert-btn:not(:disabled):hover  { background: #2d1b69; }
-    #compile-btn { background: #0f2a1a; color: var(--success); border-color: #166534; }
     #compile-btn:not(:disabled):hover { background: #14382a; }
-    #status-msg { font-size: 12px; min-width: 180px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    #compile-btn:disabled { opacity: 0.4; cursor: default; }
+    #status-msg { font-size: 11px; min-width: 160px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     #status-msg.info    { color: var(--muted); }
     #status-msg.success { color: var(--success); }
     #status-msg.warn    { color: var(--warn); }
@@ -262,7 +308,7 @@
     /* ── LaTeX bar ───────────────────────────────────────────────────── */
     .latex-bar {
       background: #0a0a18; border-top: 1px solid var(--border);
-      display: flex; align-items: stretch; max-height: 52px; flex-shrink: 0;
+      display: flex; align-items: stretch; max-height: 48px; flex-shrink: 0;
     }
     #latex-code {
       flex: 1; padding: 8px 14px;
@@ -273,12 +319,12 @@
     #copy-btn {
       padding: 0 16px; background: var(--accent-bg); color: var(--accent);
       border: none; border-left: 1px solid var(--border); cursor: pointer;
-      font-size: 11px; font-weight: 600; white-space: nowrap; transition: background 0.12s, color 0.12s;
+      font-size: 11px; font-weight: 600; white-space: nowrap;
+      transition: background 0.12s, color 0.12s;
     }
     #copy-btn:hover   { background: #2d1b69; }
     #copy-btn.success { color: var(--success); }
 
-    /* ── Scrollbar ───────────────────────────────────────────────────── */
     ::-webkit-scrollbar { width: 5px; height: 5px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
@@ -289,7 +335,7 @@
 
 <header>
   <span class="logo">📷 Photobook Builder</span>
-  <span class="sub">Scegli layout → trascina immagini → Inserisci → il documento si aggiorna</span>
+  <span class="sub">Seleziona sezione → scegli layout → trascina immagini → Inserisci</span>
   <div class="server-badge" id="server-badge">
     <span class="dot"></span><span class="slbl">Connessione…</span>
   </div>
@@ -306,28 +352,50 @@
   <!-- PDF -->
   <div class="pdf-panel">
     <div class="panel-head">
-      Documento corrente
+      Documento
       <button class="icon-btn" id="refresh-pdf-btn" title="Aggiorna PDF">↻</button>
     </div>
     <div class="pdf-wrap">
       <iframe id="pdf-frame" title="PDF preview"></iframe>
       <div class="pdf-placeholder" id="pdf-placeholder">
         <span class="icon">📄</span>
-        Nessun PDF<br><small>Compila con il pulsante in basso</small>
+        Nessun PDF<br><small>Compila con ▶ in basso</small>
       </div>
     </div>
   </div>
 
-  <!-- Canvas -->
+  <!-- Canvas panel -->
   <div class="canvas-panel">
+
+    <!-- Strip pagine esistenti -->
+    <div class="pages-strip" id="pages-strip"></div>
+
+    <!-- Empty state (no layout, no page selected) -->
     <div class="empty-state" id="empty-state">
       <div class="empty-arrow">←</div>
       Seleziona un layout<br>dal pannello a sinistra
     </div>
-    <div class="page-shadow" id="page-shadow" style="display:none">
-      <div id="page-canvas"></div>
+
+    <!-- Mode badge + canvas (shown when layout is active) -->
+    <div id="mode-badge" class="mode-badge new-mode" style="display:none">Nuova pagina</div>
+    <div class="canvas-center">
+      <div class="page-shadow" id="page-shadow" style="display:none">
+        <div id="page-canvas"></div>
+      </div>
     </div>
-    <div class="canvas-label" id="canvas-label" style="display:none"></div>
+
+    <!-- Controls below canvas -->
+    <div class="canvas-controls" id="canvas-controls" style="display:none">
+      <!-- New mode: show section selector -->
+      <div id="section-row" style="display:flex; align-items:center; gap:8px;">
+        <span class="ctrl-label">Inserisci in</span>
+        <select id="section-select"><option value="">— sezione —</option></select>
+      </div>
+      <div class="ctrl-sep"></div>
+      <button id="canvas-delete-btn" style="display:none" title="Rimuovi questa pagina dal file .tex">🗑 Elimina</button>
+      <button id="canvas-action-btn" disabled>＋ Inserisci pagina</button>
+    </div>
+
   </div>
 
   <!-- Images -->
@@ -337,7 +405,7 @@
       <button class="icon-btn" id="refresh-imgs-btn" title="Ricarica immagini">↻</button>
     </div>
     <div class="images-grid" id="images-grid">
-      <div class="empty-images">Connessione al server…</div>
+      <div class="empty-images">Connessione…</div>
     </div>
   </div>
 
@@ -349,19 +417,11 @@
   <div class="chapter-chips" id="chapter-chips"></div>
   <div class="new-chapter-form">
     <input type="text" class="chapter-input" id="new-chapter-input"
-           placeholder="nome-capitolo" maxlength="40"
-           title="Usa solo lettere, numeri, trattini">
+           placeholder="nuovo-capitolo" maxlength="40">
     <button class="create-btn" id="new-chapter-btn">+ Crea</button>
   </div>
-</div>
-
-<!-- Action bar -->
-<div class="action-bar">
-  <span class="action-label">Inserisci in:</span>
-  <select id="section-select"><option value="">— sezione —</option></select>
-  <button id="insert-btn" class="action-btn" disabled>+ Inserisci pagina</button>
-  <div class="action-sep"></div>
-  <button id="compile-btn" class="action-btn">▶ Compila PDF</button>
+  <div class="chapters-sep"></div>
+  <button id="compile-btn">▶ Compila PDF</button>
   <span id="status-msg" class="info"></span>
 </div>
 
@@ -373,8 +433,7 @@
 
 <script>
 // ── Layout definitions ───────────────────────────────────────────────────
-// Slot: [left%, top%, width%, height%]  — page ratio 216:303
-const RATIO = 303 / 216;
+const RATIO = 303 / 216;  // rapporto pagina reale del documento
 
 const LAYOUTS = [
   // 1 immagine
@@ -403,11 +462,14 @@ const LAYOUTS = [
     slots:[[20,2,60,44],[20,50,60,44]],        latex: p=>`\\twoPortraitStackedTopPage{${p[0]}}\n  {${p[1]}}` },
   // 3 immagini
   { id:'threeImagesLargeMargins',         label:'Landscape + 2 Ritratto', group:'3 immagini', count:3,
-    slots:[[5,4,90,38],[5,47,43,47],[52,47,43,47]],       latex: p=>`\\threeImagesLargeMargins{${p[0]}}\n  {${p[1]}}\n  {${p[2]}}` },
+    slots:[[5,4,90,38],[5,47,43,47],[52,47,43,47]],
+    latex: p=>`\\threeImagesLargeMargins{${p[0]}}\n  {${p[1]}}\n  {${p[2]}}` },
   { id:'threeImagesLargeMarginsInverted', label:'2 Ritratto + Landscape', group:'3 immagini', count:3,
-    slots:[[5,4,43,47],[52,4,43,47],[5,56,90,38]],        latex: p=>`\\threeImagesLargeMarginsInverted{${p[0]}}\n  {${p[1]}}\n  {${p[2]}}` },
+    slots:[[5,4,43,47],[52,4,43,47],[5,56,90,38]],
+    latex: p=>`\\threeImagesLargeMarginsInverted{${p[0]}}\n  {${p[1]}}\n  {${p[2]}}` },
   { id:'threeImagesThinMargins',          label:'3 Margini sottili',      group:'3 immagini', count:3,
-    slots:[[1,1,98,42],[1,45,47.5,54],[51.5,45,47.5,54]], latex: p=>`\\threeImagesThinMargins{${p[0]}}\n  {${p[1]}}\n  {${p[2]}}` },
+    slots:[[1,1,98,42],[1,45,47.5,54],[51.5,45,47.5,54]],
+    latex: p=>`\\threeImagesThinMargins{${p[0]}}\n  {${p[1]}}\n  {${p[2]}}` },
   // 4 immagini
   { id:'fourPortraitImages', label:'4 Ritratto (2×2)', group:'4 immagini', count:4,
     slots:[[2,2,46,45],[52,2,46,45],[2,52,46,45],[52,52,46,45]],
@@ -424,17 +486,25 @@ const LAYOUTS = [
 ];
 
 // ── State ─────────────────────────────────────────────────────────────────
-let activeLayout = null;
-let slotData     = [];
-let images       = [];
+let activeLayout    = null;
+let slotData        = [];      // null | {path, src} per slot
+let images          = [];
+let activeSectionName = null;
+let sectionPages    = [];      // [{index, command, images}]
+let activePageIndex = null;    // null = new page, int = edit mode
 
 function computePageSize() {
   const panel = document.querySelector('.canvas-panel');
-  const maxW  = Math.min(panel.clientWidth  - 40, 340);
-  const maxH  = panel.clientHeight - 60;
-  const byH   = Math.floor(maxH / RATIO);
-  const w     = Math.min(maxW, byH);
-  return { w: Math.max(w, 200), h: Math.round(Math.max(w, 200) * RATIO) };
+  const strip = document.getElementById('pages-strip');
+  const badge = document.getElementById('mode-badge');
+  const ctrls = document.getElementById('canvas-controls');
+  const reserved = (strip.offsetHeight || 0) + (badge.offsetHeight || 0)
+                 + (ctrls.offsetHeight || 52) + 40;
+  const maxW = Math.min(panel.clientWidth - 32, 340);
+  const maxH = panel.clientHeight - reserved;
+  const byH  = Math.floor(maxH / RATIO);
+  const w    = Math.max(Math.min(maxW, byH), 160);
+  return { w, h: Math.round(w * RATIO) };
 }
 
 // ── Bootstrap ─────────────────────────────────────────────────────────────
@@ -443,10 +513,11 @@ window.addEventListener('DOMContentLoaded', () => {
   initServer();
   document.getElementById('copy-btn').addEventListener('click', copyLatex);
   document.getElementById('compile-btn').addEventListener('click', () => compilePDF());
-  document.getElementById('insert-btn').addEventListener('click', insertPage);
+  document.getElementById('canvas-action-btn').addEventListener('click', insertOrSavePage);
+  document.getElementById('canvas-delete-btn').addEventListener('click', deletePage);
   document.getElementById('refresh-pdf-btn').addEventListener('click', refreshPDF);
   document.getElementById('refresh-imgs-btn').addEventListener('click', loadImages);
-  document.getElementById('section-select').addEventListener('change', updateInsertBtn);
+  document.getElementById('section-select').addEventListener('change', onSectionChange);
   document.getElementById('new-chapter-btn').addEventListener('click', createChapter);
   document.getElementById('new-chapter-input').addEventListener('keydown', e => {
     if (e.key === 'Enter') createChapter();
@@ -454,7 +525,7 @@ window.addEventListener('DOMContentLoaded', () => {
   document.addEventListener('dragover', e => e.preventDefault());
 });
 
-// ── Server init ───────────────────────────────────────────────────────────
+// ── Server ────────────────────────────────────────────────────────────────
 async function initServer() {
   try {
     await Promise.all([loadImages(), loadSections()]);
@@ -464,9 +535,7 @@ async function initServer() {
     setServerBadge(false);
     setStatus('⚠ Server non raggiungibile — avvia: python gui/server.py', 'warn');
     document.getElementById('images-grid').innerHTML =
-      '<div class="empty-images">Server offline<br>Avvia:<br>python gui/server.py</div>';
-    document.getElementById('chapter-chips').innerHTML =
-      '<span style="color:var(--muted);font-size:11px">—</span>';
+      '<div class="empty-images">Server offline<br>python gui/server.py</div>';
   }
 }
 
@@ -488,17 +557,15 @@ function renderImageGrid() {
   const grid = document.getElementById('images-grid');
   grid.innerHTML = '';
   if (!images.length) {
-    grid.appendChild(el('div', 'empty-images', 'Nessuna immagine\nnella cartella images/'));
-    return;
+    grid.appendChild(el('div', 'empty-images', 'Nessuna immagine\nnella cartella images/')); return;
   }
   images.forEach(img => {
-    const thumb  = el('div', 'img-thumb');
+    const thumb = el('div', 'img-thumb');
     thumb.draggable = true;
-    const imgEl  = document.createElement('img');
-    imgEl.src    = `/image?path=${encodeURIComponent(img.path)}`;
-    imgEl.alt    = img.name;
-    imgEl.loading = 'lazy';
-    const src    = imgEl.src;
+    const imgEl = document.createElement('img');
+    imgEl.src   = `/image?path=${encodeURIComponent(img.path)}`;
+    imgEl.alt   = img.name; imgEl.loading = 'lazy';
+    const src   = imgEl.src;
     thumb.appendChild(imgEl);
     thumb.appendChild(el('div', 'img-thumb-name', img.name));
     thumb.addEventListener('dragstart', e => {
@@ -515,7 +582,7 @@ function renderImageGrid() {
 async function loadSections() {
   const res  = await fetch('/sections');
   if (!res.ok) throw new Error();
-  const secs = await res.json();   // [{name, active}]
+  const secs = await res.json();
   renderChapterChips(secs);
   renderSectionSelect(secs);
 }
@@ -523,22 +590,18 @@ async function loadSections() {
 function renderChapterChips(secs) {
   const chips = document.getElementById('chapter-chips');
   chips.innerHTML = '';
-  if (!secs.length) {
-    chips.appendChild(el('span', '', '—'));
-    return;
-  }
   secs.forEach(s => {
     const chip = el('div', 'chapter-chip ' + (s.active ? 'on' : 'off'));
     chip.dataset.section = s.name;
     chip.innerHTML = `<span class="chip-dot"></span>${s.name.replace('.tex', '')}`;
-    chip.title = s.active ? 'Clicca per escludere dalla compilazione' : 'Clicca per includere nella compilazione';
+    chip.title = s.active ? 'Clicca per escludere dalla compilazione' : 'Clicca per includere';
     chip.addEventListener('click', () => toggleSection(s.name, chip));
     chips.appendChild(chip);
   });
 }
 
 function renderSectionSelect(secs) {
-  const sel = document.getElementById('section-select');
+  const sel  = document.getElementById('section-select');
   const prev = sel.value;
   sel.innerHTML = '<option value="">— sezione —</option>';
   secs.forEach(s => {
@@ -548,87 +611,126 @@ function renderSectionSelect(secs) {
   });
   if (prev && [...sel.options].some(o => o.value === prev)) sel.value = prev;
   else if (secs.length === 1) sel.value = secs[0].name;
-  updateInsertBtn();
+  if (sel.value) onSectionChange();
+}
+
+async function onSectionChange() {
+  activeSectionName = document.getElementById('section-select').value;
+  activePageIndex   = null;
+  sectionPages      = [];
+
+  if (activeSectionName) {
+    try {
+      const res  = await fetch(`/pages?section=${encodeURIComponent(activeSectionName)}`);
+      sectionPages = await res.json();
+    } catch { sectionPages = []; }
+  }
+
+  renderPagesStrip();
+  updateCanvasControls();
 }
 
 async function toggleSection(sectionName, chipEl) {
-  const currentlyOn = chipEl.classList.contains('on');
-  const newActive   = !currentlyOn;
-
-  // Optimistic UI update
-  chipEl.classList.toggle('on',  newActive);
-  chipEl.classList.toggle('off', !newActive);
-  chipEl.title = newActive
-    ? 'Clicca per escludere dalla compilazione'
-    : 'Clicca per includere nella compilazione';
-
+  const was = chipEl.classList.contains('on');
+  chipEl.classList.toggle('on', !was); chipEl.classList.toggle('off', was);
+  chipEl.title = !was ? 'Clicca per escludere dalla compilazione' : 'Clicca per includere';
   try {
-    const r = await fetch('/toggle-section', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ section: sectionName, active: newActive }),
+    const r    = await fetch('/toggle-section', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ section: sectionName, active: !was }),
     });
     const data = await r.json();
     if (!data.ok) {
-      // Revert on error
-      chipEl.classList.toggle('on',  currentlyOn);
-      chipEl.classList.toggle('off', !currentlyOn);
+      chipEl.classList.toggle('on', was); chipEl.classList.toggle('off', !was);
       setStatus(`✗ ${data.error}`, 'error');
     } else {
-      const label = sectionName.replace('.tex', '');
-      setStatus(
-        newActive ? `✓ ${label} incluso — compila per aggiornare` : `○ ${label} escluso — compila per aggiornare`,
-        'info'
-      );
+      setStatus(`${!was ? '✓' : '○'} ${sectionName.replace('.tex','')} — compila per aggiornare`, 'info');
     }
   } catch {
-    chipEl.classList.toggle('on',  currentlyOn);
-    chipEl.classList.toggle('off', !currentlyOn);
+    chipEl.classList.toggle('on', was); chipEl.classList.toggle('off', !was);
     setStatus('✗ Errore di rete', 'error');
   }
 }
 
-// ── Create new chapter ─────────────────────────────────────────────────────
 async function createChapter() {
   const input = document.getElementById('new-chapter-input');
   const name  = input.value.trim();
   if (!name) { input.focus(); return; }
-
   setStatus('Creazione capitolo…', 'info');
   try {
-    const r = await fetch('/new-chapter', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+    const r    = await fetch('/new-chapter', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({ name }),
     });
     const data = await r.json();
     if (!data.ok) { setStatus(`✗ ${data.error}`, 'error'); return; }
-
     input.value = '';
     setStatus(`✓ Creato ${data.name} — aggiunto a main.tex`, 'success');
-    await loadSections();  // refresh chips + select
-  } catch {
-    setStatus('✗ Errore di rete', 'error');
-  }
+    await loadSections();
+  } catch { setStatus('✗ Errore di rete', 'error'); }
 }
 
-// ── PDF ───────────────────────────────────────────────────────────────────
-async function refreshPDF() {
-  try {
-    const res = await fetch('/pdf?' + Date.now());
-    if (!res.ok) {
-      document.getElementById('pdf-frame').style.display = 'none';
-      document.getElementById('pdf-placeholder').style.display = 'flex';
-      return;
+// ── Pages strip ───────────────────────────────────────────────────────────
+function renderPagesStrip() {
+  const strip = document.getElementById('pages-strip');
+  strip.innerHTML = '';
+
+  if (!activeSectionName) {
+    strip.style.display = 'none'; return;
+  }
+  strip.style.display = 'flex';
+
+  // Existing pages
+  sectionPages.forEach((page, i) => {
+    const chip = el('div', 'page-chip' + (activePageIndex === i ? ' active' : ''));
+    chip.innerHTML = `<span class="chip-num">P${i + 1}</span>
+                      <span class="chip-cmd">${page.command || '?'}</span>`;
+    chip.title = `Clicca per modificare la pagina ${i + 1}`;
+    chip.addEventListener('click', () => loadPageForEdit(page, i));
+    strip.appendChild(chip);
+  });
+
+  // "Nuova pagina" chip
+  const newChip = el('div', 'page-chip new-chip' + (activePageIndex === null ? ' active' : ''));
+  newChip.innerHTML = '<span class="chip-num">＋</span><span class="chip-cmd">Nuova</span>';
+  newChip.title = 'Crea una nuova pagina';
+  newChip.addEventListener('click', switchToNewMode);
+  strip.appendChild(newChip);
+}
+
+function loadPageForEdit(page, index) {
+  activePageIndex = index;
+
+  const layout = LAYOUTS.find(l => l.id === page.command);
+  if (!layout) {
+    setStatus(`⚠ Layout "${page.command}" non riconosciuto dal builder`, 'warn');
+    renderPagesStrip();
+    return;
+  }
+
+  // Select layout (resets slotData)
+  _applyLayout(layout);
+
+  // Pre-fill slots with existing images
+  page.images.forEach((imgPath, i) => {
+    if (i < slotData.length) {
+      slotData[i] = { path: imgPath, src: `/image?path=${encodeURIComponent(imgPath)}` };
     }
-    const blob  = await res.blob();
-    const url   = URL.createObjectURL(blob);
-    const frame = document.getElementById('pdf-frame');
-    if (frame.src && frame.src.startsWith('blob:')) URL.revokeObjectURL(frame.src);
-    frame.src = url;
-    frame.style.display = 'block';
-    document.getElementById('pdf-placeholder').style.display = 'none';
-  } catch { /* server offline */ }
+  });
+
+  buildCanvas();
+  updateLatex();
+  renderPagesStrip();
+  updateCanvasControls();
+}
+
+function switchToNewMode() {
+  activePageIndex = null;
+  if (activeLayout) slotData = Array(activeLayout.count).fill(null);
+  buildCanvas();
+  updateLatex();
+  renderPagesStrip();
+  updateCanvasControls();
 }
 
 // ── Layout panel ─────────────────────────────────────────────────────────
@@ -663,22 +765,32 @@ function makeSVG(layout) {
 }
 
 function selectLayout(layout) {
-  document.querySelectorAll('.layout-card').forEach(c => c.classList.remove('selected'));
-  document.querySelector(`.layout-card[data-id="${layout.id}"]`).classList.add('selected');
-  activeLayout = layout;
-  slotData     = Array(layout.count).fill(null);
-  document.getElementById('empty-state').style.display  = 'none';
-  document.getElementById('page-shadow').style.display  = 'block';
-  document.getElementById('canvas-label').style.display = 'block';
-  buildCanvas(); updateLatex(); updateInsertBtn();
+  // If in edit mode and changing template → stay in edit mode with new template
+  _applyLayout(layout);
+  slotData = Array(layout.count).fill(null);
+  buildCanvas(); updateLatex(); renderPagesStrip(); updateCanvasControls();
 }
 
+function _applyLayout(layout) {
+  document.querySelectorAll('.layout-card').forEach(c => c.classList.remove('selected'));
+  const card = document.querySelector(`.layout-card[data-id="${layout.id}"]`);
+  if (card) card.classList.add('selected');
+  activeLayout = layout;
+  slotData     = Array(layout.count).fill(null);
+
+  document.getElementById('empty-state').style.display  = 'none';
+  document.getElementById('mode-badge').style.display   = 'block';
+  document.getElementById('page-shadow').style.display  = 'block';
+  document.getElementById('canvas-controls').style.display = 'flex';
+}
+
+// ── Canvas ────────────────────────────────────────────────────────────────
 function buildCanvas() {
+  if (!activeLayout) return;
   const { w, h } = computePageSize();
   const canvas   = document.getElementById('page-canvas');
   canvas.style.cssText = `width:${w}px;height:${h}px;`;
   canvas.innerHTML = '';
-  document.getElementById('canvas-label').textContent = activeLayout.label;
 
   activeLayout.slots.forEach((s, i) => {
     const slot = el('div', 'slot' + (slotData[i] ? ' filled' : ''));
@@ -692,7 +804,7 @@ function buildCanvas() {
       const clr = el('button', 'slot-clear', '×');
       clr.addEventListener('click', e => {
         e.stopPropagation(); slotData[i] = null;
-        buildCanvas(); updateLatex(); updateInsertBtn();
+        buildCanvas(); updateLatex();
       });
       slot.appendChild(clr);
     } else {
@@ -711,47 +823,141 @@ function bindDropZone(slotEl, idx) {
     const json = e.dataTransfer.getData('application/x-img');
     if (json) {
       slotData[idx] = JSON.parse(json);
-      buildCanvas(); updateLatex(); updateInsertBtn(); return;
+      buildCanvas(); updateLatex(); return;
     }
     const file = e.dataTransfer.files[0];
     if (file && file.type.startsWith('image/')) {
       const r = new FileReader();
       r.onload = ev => {
         slotData[idx] = { path: file.webkitRelativePath || file.name, src: ev.target.result };
-        buildCanvas(); updateLatex(); updateInsertBtn();
+        buildCanvas(); updateLatex();
       };
       r.readAsDataURL(file);
     }
   });
 }
 
-// ── Insert + compile ──────────────────────────────────────────────────────
+// ── Canvas controls state ─────────────────────────────────────────────────
+function updateCanvasControls() {
+  const isEdit = activePageIndex !== null;
+  const btn    = document.getElementById('canvas-action-btn');
+  const delBtn = document.getElementById('canvas-delete-btn');
+  const secRow = document.getElementById('section-row');
+  const badge  = document.getElementById('mode-badge');
+
+  if (isEdit) {
+    badge.textContent = `✎ Modifica pagina ${activePageIndex + 1}`;
+    badge.className   = 'mode-badge edit-mode';
+    btn.textContent   = '✓ Salva modifiche';
+    btn.className     = 'save-mode';
+    btn.disabled      = !activeLayout;
+    delBtn.style.display = 'inline-flex';
+    secRow.style.display = 'none';
+  } else {
+    badge.textContent = 'Nuova pagina';
+    badge.className   = 'mode-badge new-mode';
+    btn.textContent   = '＋ Inserisci pagina';
+    btn.className     = '';
+    btn.disabled      = !activeLayout || !activeSectionName;
+    delBtn.style.display = 'none';
+    secRow.style.display = 'flex';
+  }
+}
+
+// ── PDF ───────────────────────────────────────────────────────────────────
+async function refreshPDF() {
+  try {
+    const res = await fetch('/pdf?' + Date.now());
+    if (!res.ok) {
+      document.getElementById('pdf-frame').style.display = 'none';
+      document.getElementById('pdf-placeholder').style.display = 'flex'; return;
+    }
+    const blob  = await res.blob();
+    const url   = URL.createObjectURL(blob);
+    const frame = document.getElementById('pdf-frame');
+    if (frame.src && frame.src.startsWith('blob:')) URL.revokeObjectURL(frame.src);
+    frame.src = url;
+    frame.style.display = 'block';
+    document.getElementById('pdf-placeholder').style.display = 'none';
+  } catch { /* server offline */ }
+}
+
+// ── Insert / Save / Delete ────────────────────────────────────────────────
+async function insertOrSavePage() {
+  if (activePageIndex !== null) await savePage();
+  else                          await insertPage();
+}
+
 async function insertPage() {
   const section = document.getElementById('section-select').value;
   if (!section)      return setStatus('⚠ Seleziona una sezione', 'warn');
   if (!activeLayout) return setStatus('⚠ Seleziona un layout', 'warn');
 
   const paths = slotData.map((d, i) => d ? d.path : `IMMAGINE_${i + 1}`);
-  const latex = activeLayout.latex(paths);
-
-  setBusy(true, 'Inserimento nel file .tex…');
+  setBusy(true, 'Inserimento…');
   try {
     const r    = await fetch('/insert', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ section, latex }),
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ section, latex: activeLayout.latex(paths) }),
     });
     const data = await r.json();
     if (!data.ok) { setStatus(`✗ ${data.error}`, 'error'); setBusy(false); return; }
+    // Refresh pages strip then compile
+    const res2 = await fetch(`/pages?section=${encodeURIComponent(section)}`);
+    sectionPages = await res2.json();
+    renderPagesStrip();
     await compilePDF(false);
-  } catch (e) {
-    setStatus(`✗ ${e.message}`, 'error');
-  }
+  } catch (e) { setStatus(`✗ ${e.message}`, 'error'); }
+  setBusy(false);
+}
+
+async function savePage() {
+  if (!activeLayout || activePageIndex === null) return;
+  const paths = slotData.map((d, i) => d ? d.path : `IMMAGINE_${i + 1}`);
+  setBusy(true, 'Salvataggio modifica…');
+  try {
+    const r    = await fetch('/update-page', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ section: activeSectionName, index: activePageIndex, latex: activeLayout.latex(paths) }),
+    });
+    const data = await r.json();
+    if (!data.ok) { setStatus(`✗ ${data.error}`, 'error'); setBusy(false); return; }
+    // Reload page list and compile
+    const res2   = await fetch(`/pages?section=${encodeURIComponent(activeSectionName)}`);
+    sectionPages = await res2.json();
+    renderPagesStrip();
+    await compilePDF(false);
+    setStatus(`✓ Pagina ${activePageIndex + 1} aggiornata`, 'success');
+  } catch (e) { setStatus(`✗ ${e.message}`, 'error'); }
+  setBusy(false);
+}
+
+async function deletePage() {
+  if (activePageIndex === null) return;
+  const num = activePageIndex + 1;
+  if (!confirm(`Rimuovere la pagina ${num} da ${activeSectionName}?\nQuesta azione non è annullabile.`)) return;
+
+  setBusy(true, `Rimozione pagina ${num}…`);
+  try {
+    const r    = await fetch('/delete-page', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ section: activeSectionName, index: activePageIndex }),
+    });
+    const data = await r.json();
+    if (!data.ok) { setStatus(`✗ ${data.error}`, 'error'); setBusy(false); return; }
+    activePageIndex = null;
+    const res2   = await fetch(`/pages?section=${encodeURIComponent(activeSectionName)}`);
+    sectionPages = await res2.json();
+    if (activeLayout) slotData = Array(activeLayout.count).fill(null);
+    buildCanvas(); updateLatex(); renderPagesStrip(); updateCanvasControls();
+    await compilePDF(false);
+    setStatus(`✓ Pagina ${num} rimossa`, 'success');
+  } catch (e) { setStatus(`✗ ${e.message}`, 'error'); }
   setBusy(false);
 }
 
 async function compilePDF(updateBusy = true) {
-  if (updateBusy) setBusy(true, 'Compilazione in corso…');
+  if (updateBusy) setBusy(true, 'Compilazione…');
   else            setStatus('Compilazione in corso…', 'info');
   try {
     const r    = await fetch('/compile', { method: 'POST' });
@@ -760,20 +966,18 @@ async function compilePDF(updateBusy = true) {
       setStatus(`✓ Compilato in ${data.seconds}s`, 'success');
       await refreshPDF();
     } else {
-      setStatus(`✗ Errore LaTeX: ${data.error}`, 'error');
+      setStatus(`✗ ${data.error}`, 'error');
     }
-  } catch {
-    setStatus('✗ Server non raggiungibile', 'error');
-  }
+  } catch { setStatus('✗ Server non raggiungibile', 'error'); }
   if (updateBusy) setBusy(false);
 }
 
 // ── LaTeX bar ─────────────────────────────────────────────────────────────
 function updateLatex() {
-  const e = document.getElementById('latex-code');
-  if (!activeLayout) { e.innerHTML = '<span class="latex-placeholder">Il codice LaTeX apparirà qui…</span>'; return; }
+  const el = document.getElementById('latex-code');
+  if (!activeLayout) { el.innerHTML = '<span class="latex-placeholder">Il codice LaTeX apparirà qui…</span>'; return; }
   const paths = slotData.map((d, i) => d ? d.path : `IMMAGINE_${i + 1}`);
-  e.textContent = activeLayout.latex(paths);
+  el.textContent = activeLayout.latex(paths);
 }
 
 function copyLatex() {
@@ -786,25 +990,18 @@ function copyLatex() {
   });
 }
 
-// ── Helpers ───────────────────────────────────────────────────────────────
-function updateInsertBtn() {
-  const section = document.getElementById('section-select').value;
-  document.getElementById('insert-btn').disabled = !(section && activeLayout);
-}
-
+// ── UI helpers ────────────────────────────────────────────────────────────
 function setBusy(on, msg) {
-  const section = document.getElementById('section-select').value;
-  document.getElementById('insert-btn').disabled  = on || !(section && activeLayout);
-  document.getElementById('compile-btn').disabled = on;
-  document.getElementById('compile-btn').textContent = on ? '⏳ In corso…' : '▶ Compila PDF';
+  document.getElementById('compile-btn').disabled       = on;
+  document.getElementById('canvas-action-btn').disabled = on;
+  document.getElementById('compile-btn').textContent    = on ? '⏳ In corso…' : '▶ Compila PDF';
   if (msg) setStatus(msg, 'info');
 }
 
 function setStatus(msg, type = 'info') {
   const s = document.getElementById('status-msg');
   s.textContent = msg; s.className = type;
-  if (type === 'success')
-    setTimeout(() => { s.textContent = ''; s.className = 'info'; }, 6000);
+  if (type === 'success') setTimeout(() => { s.textContent = ''; s.className = 'info'; }, 6000);
 }
 
 function el(tag, cls, text) {
@@ -813,7 +1010,6 @@ function el(tag, cls, text) {
   if (text) e.textContent = text;
   return e;
 }
-
 function pct(v, total) { return (v / 100 * total) + 'px'; }
 </script>
 </body>
