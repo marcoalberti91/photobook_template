@@ -363,6 +363,96 @@
     #copy-btn:hover   { background: #2d1b69; }
     #copy-btn.success { color: var(--success); }
 
+    /* ── Header form ─────────────────────────────────────────────────── */
+    #header-form {
+      display: none; flex-direction: column; gap: 0;
+      flex: 1; overflow-y: auto; min-height: 0;
+      padding: 0 4px 12px; width: 100%;
+    }
+    .hf-section {
+      padding: 10px 8px 8px; border-bottom: 1px solid var(--border);
+    }
+    .hf-section:last-child { border-bottom: none; }
+    .hf-section-title {
+      font-size: 10px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.08em; color: var(--accent); margin-bottom: 8px;
+    }
+    .hf-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
+    .hf-row:last-child { margin-bottom: 0; }
+    .hf-field { display: flex; flex-direction: column; gap: 3px; }
+    .hf-field.grow { flex: 1; min-width: 80px; }
+    .hf-field.short { width: 54px; flex-shrink: 0; }
+    .hf-field.medium { width: 90px; flex-shrink: 0; }
+    .hf-field label {
+      font-size: 9px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.07em; color: var(--muted);
+    }
+    .hf-field input, .hf-field textarea {
+      background: #1a1a35; color: var(--text); border: 1px solid var(--border);
+      border-radius: 5px; padding: 5px 7px; font-size: 12px; font-family: inherit;
+      resize: vertical;
+    }
+    .hf-field input:focus, .hf-field textarea:focus {
+      outline: none; border-color: var(--accent-dim);
+    }
+    .hf-field textarea { resize: vertical; min-height: 52px; }
+
+    /* Flag image drop zone */
+    .hf-img-drop {
+      border: 2px dashed var(--border); border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      flex-direction: column; gap: 4px; cursor: pointer;
+      background: #1a1a2e; overflow: hidden; position: relative;
+      transition: border-color 0.12s;
+    }
+    .hf-img-drop:hover, .hf-img-drop.dragover { border-color: var(--accent); }
+    .hf-img-drop.filled { border-style: solid; border-color: var(--accent-dim); }
+    .hf-img-drop img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .hf-drop-label { font-size: 10px; color: var(--muted); text-align: center; pointer-events: none; }
+    .hf-drop-clear {
+      position: absolute; top: 3px; right: 3px; width: 18px; height: 18px;
+      background: rgba(0,0,0,0.7); color: white; border: none; border-radius: 50%;
+      cursor: pointer; font-size: 12px; display: flex; align-items: center; justify-content: center;
+      opacity: 0; transition: opacity 0.12s;
+    }
+    .hf-img-drop:hover .hf-drop-clear { opacity: 1; }
+
+    /* Portrait images strip */
+    .hf-portraits-row {
+      display: flex; gap: 7px; overflow-x: auto; padding: 4px 0 6px;
+      align-items: flex-end;
+    }
+    .hf-portraits-row::-webkit-scrollbar { height: 3px; }
+    .hf-portrait-slot {
+      flex-shrink: 0; width: 64px; height: 88px;
+      border: 2px dashed var(--border); border-radius: 5px;
+      display: flex; align-items: center; justify-content: center;
+      background: #1a1a2e; position: relative; overflow: hidden; cursor: pointer;
+      transition: border-color 0.12s;
+    }
+    .hf-portrait-slot:hover, .hf-portrait-slot.dragover { border-color: var(--accent); }
+    .hf-portrait-slot.filled { border-style: solid; border-color: var(--accent-dim); }
+    .hf-portrait-slot img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .hf-portrait-slot .hf-drop-clear { opacity: 0; }
+    .hf-portrait-slot:hover .hf-drop-clear { opacity: 1; }
+    .hf-portrait-add {
+      flex-shrink: 0; width: 64px; height: 88px;
+      border: 2px dashed #3a3a6a; border-radius: 5px;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--muted); font-size: 22px; cursor: pointer;
+      background: transparent; transition: border-color 0.12s, color 0.12s;
+    }
+    .hf-portrait-add.dragover { border-color: var(--accent); color: var(--accent); }
+
+    /* Diary text */
+    #hf-text {
+      width: 100%; resize: vertical; min-height: 120px;
+      background: #1a1a35; color: var(--text); border: 1px solid var(--border);
+      border-radius: 5px; padding: 8px; font-size: 12px; font-family: inherit;
+      line-height: 1.6;
+    }
+    #hf-text:focus { outline: none; border-color: var(--accent-dim); }
+
     ::-webkit-scrollbar { width: 5px; height: 5px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
@@ -415,8 +505,57 @@
       Seleziona un layout<br>dal pannello a sinistra
     </div>
 
-    <!-- Mode badge + canvas (shown when layout is active) -->
+    <!-- Mode badge -->
     <div id="mode-badge" class="mode-badge new-mode" style="display:none">Nuova pagina</div>
+
+    <!-- Header edit form (shown instead of canvas in header mode) -->
+    <div id="header-form">
+      <!-- Title row -->
+      <div class="hf-section">
+        <div class="hf-section-title">Intestazione capitolo</div>
+        <div class="hf-row">
+          <div class="hf-field short"><label>Giorno</label><input type="text" id="hf-day" placeholder="1"></div>
+          <div class="hf-field grow"><label>Titolo</label><input type="text" id="hf-title" placeholder="Titolo"></div>
+        </div>
+        <div class="hf-row">
+          <div class="hf-field grow"><label>Data</label><input type="text" id="hf-date" placeholder="01 January 2020"></div>
+          <div class="hf-field medium"><label>Città</label><input type="text" id="hf-city" placeholder="City"></div>
+          <div class="hf-field medium"><label>Paese</label><input type="text" id="hf-country" placeholder="Country"></div>
+        </div>
+      </div>
+
+      <!-- Flag + info block -->
+      <div class="hf-section">
+        <div class="hf-section-title">Bandiera e dati paese</div>
+        <div class="hf-row" style="align-items:flex-start; flex-wrap:nowrap; gap:10px;">
+          <div id="hf-flag-zone" class="hf-img-drop" style="width:80px;height:104px;flex-shrink:0;">
+            <span class="hf-drop-label">Trascina<br>bandiera</span>
+          </div>
+          <div style="flex:1; display:flex; flex-direction:column; gap:5px; min-width:0;">
+            <div class="hf-field"><label>Superficie</label><input type="text" id="hf-superficie" placeholder="200 km²"></div>
+            <div class="hf-field"><label>Popolazione</label><input type="text" id="hf-popolazione" placeholder="2,7 milioni"></div>
+            <div class="hf-field"><label>Descrizione</label><textarea id="hf-description" rows="2" placeholder="Descrizione breve, ~300 caratteri"></textarea></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Portrait images for text section -->
+      <div class="hf-section">
+        <div class="hf-section-title">Immagini sezione testo <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:9px;color:var(--muted)">— una per pagina, in ordine</span></div>
+        <div class="hf-portraits-row" id="hf-portraits"></div>
+      </div>
+
+      <!-- Diary text -->
+      <div class="hf-section">
+        <div class="hf-section-title">Testo del diario</div>
+        <div class="hf-row" style="margin-bottom:8px;">
+          <div class="hf-field grow"><label>Data intestazione testo</label><input type="text" id="hf-text-date" placeholder="01 January 2020"></div>
+        </div>
+        <textarea id="hf-text" placeholder="Inserisci il testo del diario…&#10;Separa i paragrafi con una riga vuota."></textarea>
+      </div>
+    </div>
+
+    <!-- Canvas (shown when layout is active) -->
     <div class="canvas-center">
       <div class="page-shadow" id="page-shadow" style="display:none">
         <div id="page-canvas"></div>
@@ -530,7 +669,11 @@ let slotData        = [];      // null | {path, src} per slot
 let images          = [];
 let activeSectionName = null;
 let sectionPages    = [];      // [{index, command, images}]
-let activePageIndex = null;    // null = new page, int = edit mode
+let activePageIndex = null;    // null = new page, int = edit mode, 'header' = header edit
+
+// Header form state
+let hfFlag      = null;        // {path, src}
+let hfPortraits = [];          // [{path, src} | null]
 
 function computePageSize() {
   const panel = document.querySelector('.canvas-panel');
@@ -719,6 +862,13 @@ function renderPagesStrip() {
   }
   strip.style.display = 'flex';
 
+  // Header chip (always first)
+  const hChip = el('div', 'page-chip' + (activePageIndex === 'header' ? ' active' : ''));
+  hChip.innerHTML = '<span class="chip-num">📋</span><span class="chip-cmd">Intestazione</span>';
+  hChip.title = 'Modifica l\'intestazione del capitolo';
+  hChip.addEventListener('click', editHeader);
+  strip.appendChild(hChip);
+
   // Existing pages
   sectionPages.forEach((page, i) => {
     const layout    = LAYOUTS.find(l => l.id === page.command);
@@ -739,8 +889,151 @@ function renderPagesStrip() {
   strip.appendChild(newChip);
 }
 
+// ── Header form ───────────────────────────────────────────────────────────
+function _showCanvas() {
+  document.getElementById('header-form').style.display  = 'none';
+  document.querySelector('.canvas-center').style.display = 'flex';
+}
+function _showHeaderForm() {
+  document.getElementById('header-form').style.display  = 'flex';
+  document.querySelector('.canvas-center').style.display = 'none';
+  document.getElementById('empty-state').style.display  = 'none';
+  document.getElementById('mode-badge').style.display   = 'block';
+  document.getElementById('canvas-controls').style.display = 'flex';
+}
+
+async function editHeader() {
+  if (!activeSectionName) return;
+  activePageIndex = 'header';
+  renderPagesStrip();
+  setStatus('Caricamento intestazione…', 'info');
+  try {
+    const res  = await fetch(`/header?section=${encodeURIComponent(activeSectionName)}`);
+    const data = await res.json();
+    if (!data.ok) { setStatus(`✗ ${data.error}`, 'error'); return; }
+    fillHeaderForm(data);
+  } catch { setStatus('✗ Errore di rete', 'error'); return; }
+  _showHeaderForm();
+  updateCanvasControls();
+  setStatus('', 'info');
+}
+
+function fillHeaderForm(data) {
+  document.getElementById('hf-day').value        = data.day        || '';
+  document.getElementById('hf-title').value      = data.title      || '';
+  document.getElementById('hf-date').value       = data.date       || '';
+  document.getElementById('hf-city').value       = data.city       || '';
+  document.getElementById('hf-country').value    = data.country    || '';
+  document.getElementById('hf-superficie').value = data.superficie || '';
+  document.getElementById('hf-popolazione').value= data.popolazione|| '';
+  document.getElementById('hf-description').value= data.description|| '';
+  document.getElementById('hf-text-date').value  = data.text_date  || data.date || '';
+  document.getElementById('hf-text').value       = data.text       || '';
+
+  // Flag image
+  hfFlag = data.flag_image ? { path: data.flag_image,
+    src: `/image?path=${encodeURIComponent(data.flag_image)}` } : null;
+  _renderFlagZone();
+
+  // Portrait images
+  hfPortraits = (data.portrait_images || []).map(p =>
+    ({ path: p, src: `/image?path=${encodeURIComponent(p)}` }));
+  renderHeaderPortraits();
+}
+
+function _renderFlagZone() {
+  const zone = document.getElementById('hf-flag-zone');
+  zone.innerHTML = '';
+  if (hfFlag) {
+    zone.classList.add('filled');
+    const img = document.createElement('img');
+    img.src = hfFlag.src;
+    zone.appendChild(img);
+    const clr = el('button', 'hf-drop-clear', '×');
+    clr.addEventListener('click', e => { e.stopPropagation(); hfFlag = null; _renderFlagZone(); });
+    zone.appendChild(clr);
+  } else {
+    zone.classList.remove('filled');
+    zone.appendChild(el('span', 'hf-drop-label', 'Trascina\nbandiera'));
+  }
+  _bindImgDrop(zone, img => { hfFlag = img; _renderFlagZone(); });
+}
+
+function renderHeaderPortraits() {
+  const row = document.getElementById('hf-portraits');
+  row.innerHTML = '';
+
+  hfPortraits.forEach((item, i) => {
+    const slot = el('div', 'hf-portrait-slot' + (item ? ' filled' : ''));
+    if (item) {
+      const img = document.createElement('img');
+      img.src = item.src;
+      slot.appendChild(img);
+      const clr = el('button', 'hf-drop-clear', '×');
+      clr.addEventListener('click', e => {
+        e.stopPropagation();
+        hfPortraits.splice(i, 1);
+        renderHeaderPortraits();
+      });
+      slot.appendChild(clr);
+    } else {
+      slot.appendChild(el('span', 'hf-drop-label', String(i + 1)));
+    }
+    _bindImgDrop(slot, img => { hfPortraits[i] = img; renderHeaderPortraits(); });
+    row.appendChild(slot);
+  });
+
+  // "Add" drop zone at the end
+  const add = el('div', 'hf-portrait-add', '＋');
+  add.title = 'Trascina un\'immagine per aggiungere una pagina';
+  _bindImgDrop(add, img => { hfPortraits.push(img); renderHeaderPortraits(); });
+  row.appendChild(add);
+}
+
+function _bindImgDrop(el, onDrop) {
+  el.addEventListener('dragover',  e => { e.preventDefault(); el.classList.add('dragover'); });
+  el.addEventListener('dragleave', () => el.classList.remove('dragover'));
+  el.addEventListener('drop', e => {
+    e.preventDefault(); el.classList.remove('dragover');
+    const json = e.dataTransfer.getData('application/x-img');
+    if (json) onDrop(JSON.parse(json));
+  });
+}
+
+async function saveHeader() {
+  if (!activeSectionName) return;
+  const payload = {
+    section:        activeSectionName,
+    day:            document.getElementById('hf-day').value.trim(),
+    title:          document.getElementById('hf-title').value.trim(),
+    date:           document.getElementById('hf-date').value.trim(),
+    city:           document.getElementById('hf-city').value.trim(),
+    country:        document.getElementById('hf-country').value.trim(),
+    flag_image:     hfFlag ? hfFlag.path : '',
+    superficie:     document.getElementById('hf-superficie').value.trim(),
+    popolazione:    document.getElementById('hf-popolazione').value.trim(),
+    description:    document.getElementById('hf-description').value.trim(),
+    portrait_images: hfPortraits.filter(Boolean).map(p => p.path),
+    text_date:      document.getElementById('hf-text-date').value.trim(),
+    text:           document.getElementById('hf-text').value,
+  };
+  setBusy(true, 'Salvataggio intestazione…');
+  try {
+    const r    = await fetch('/update-header', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await r.json();
+    if (!data.ok) { setStatus(`✗ ${data.error}`, 'error'); setBusy(false); return; }
+    await compilePDF(false);
+    setStatus('✓ Intestazione salvata', 'success');
+  } catch (e) { setStatus(`✗ ${e.message}`, 'error'); }
+  setBusy(false);
+}
+
 function loadPageForEdit(page, index) {
   activePageIndex = index;
+  _showCanvas();
 
   const layout = LAYOUTS.find(l => l.id === page.command);
   if (!layout) {
@@ -767,6 +1060,7 @@ function loadPageForEdit(page, index) {
 
 function switchToNewMode() {
   activePageIndex = null;
+  _showCanvas();
   if (activeLayout) slotData = Array(activeLayout.count).fill(null);
   buildCanvas();
   updateLatex();
@@ -806,7 +1100,8 @@ function makeSVG(layout) {
 }
 
 function selectLayout(layout) {
-  // If in edit mode and changing template → stay in edit mode with new template
+  // From header mode → switch to new-page mode; from page-edit → keep edit mode
+  if (activePageIndex === 'header') activePageIndex = null;
   _applyLayout(layout);
   slotData = Array(layout.count).fill(null);
   buildCanvas(); updateLatex(); renderPagesStrip(); updateCanvasControls();
@@ -819,6 +1114,7 @@ function _applyLayout(layout) {
   activeLayout = layout;
   slotData     = Array(layout.count).fill(null);
 
+  _showCanvas();
   document.getElementById('empty-state').style.display  = 'none';
   document.getElementById('mode-badge').style.display   = 'block';
   document.getElementById('page-shadow').style.display  = 'block';
@@ -880,13 +1176,20 @@ function bindDropZone(slotEl, idx) {
 
 // ── Canvas controls state ─────────────────────────────────────────────────
 function updateCanvasControls() {
-  const isEdit = activePageIndex !== null;
   const btn    = document.getElementById('canvas-action-btn');
   const delBtn = document.getElementById('canvas-delete-btn');
   const secRow = document.getElementById('section-row');
   const badge  = document.getElementById('mode-badge');
 
-  if (isEdit) {
+  if (activePageIndex === 'header') {
+    badge.textContent = '📋 Intestazione capitolo';
+    badge.className   = 'mode-badge edit-mode';
+    btn.textContent   = '💾 Salva intestazione';
+    btn.className     = 'save-mode';
+    btn.disabled      = false;
+    delBtn.style.display = 'none';
+    secRow.style.display = 'none';
+  } else if (activePageIndex !== null) {
     badge.textContent = `✎ Modifica pagina ${activePageIndex + 1}`;
     badge.className   = 'mode-badge edit-mode';
     btn.textContent   = '✓ Salva modifiche';
@@ -1020,8 +1323,9 @@ async function _selectSectionAndEdit(sectionName, pageIndex) {
 
 // ── Insert / Save / Delete ────────────────────────────────────────────────
 async function insertOrSavePage() {
-  if (activePageIndex !== null) await savePage();
-  else                          await insertPage();
+  if (activePageIndex === 'header') await saveHeader();
+  else if (activePageIndex !== null) await savePage();
+  else                               await insertPage();
 }
 
 async function insertPage() {

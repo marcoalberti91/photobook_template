@@ -93,6 +93,8 @@ class Handler(BaseHTTPRequestHandler):
         elif path == "/images":    self._json(self._list_images())
         elif path == "/sections":  self._json(self._list_sections())
         elif path == "/page-map":  self._json(self._page_map())
+        elif path == "/header":
+            self._json(self._get_header(unquote(q.get("section", [""])[0])))
         elif path == "/pages":
             self._json(self._list_pages(unquote(q.get("section", [""])[0])))
         elif path == "/image":
@@ -113,6 +115,7 @@ class Handler(BaseHTTPRequestHandler):
             "/toggle-section": lambda: self._toggle_section(data),
             "/update-page":    lambda: self._update_page(data),
             "/delete-page":    lambda: self._delete_page(data),
+            "/update-header":  lambda: self._update_header(data),
         }
         fn = routes.get(self.path)
         if fn:
@@ -249,6 +252,118 @@ class Handler(BaseHTTPRequestHandler):
         pages = [f"\\label{{pb-{slug}-{i}}}\n{_LABEL_RE.sub('', p).strip()}"
                  for i, p in enumerate(pages)]
         path.write_text(join_pages(header, pages), encoding="utf-8")
+        return {"ok": True}
+
+    def _get_header(self, section_name: str) -> dict:
+        if not section_name:
+            return {"ok": False, "error": "Section mancante"}
+        path = ROOT / "sections" / Path(section_name).name
+        if not path.exists():
+            return {"ok": False, "error": f"File non trovato: {section_name}"}
+        header, _ = split_pages(path.read_text(encoding="utf-8"))
+
+        r = {"ok": True,
+             "day": "", "title": "", "date": "", "city": "", "country": "",
+             "flag_image": "", "superficie": "", "popolazione": "", "description": "",
+             "portrait_images": [], "text_date": "", "text": ""}
+
+        m = re.search(r'\\textbf\{Day\s+([^}]+)\}', header)
+        if m: r["day"] = m.group(1).strip()
+
+        # title: token between first and second \textbar\
+        m = re.search(r'\\textbf\{Day[^}]+\}\s*\\textbar\\\s+(.*?)\s*\\textbar\\', header, re.DOTALL)
+        if m: r["title"] = m.group(1).strip()
+
+        # date: DD Month YYYY anywhere in the title line
+        m = re.search(r'\b(\d{1,2}\s+\w+\s+\d{4})\b', header)
+        if m: r["date"] = m.group(1).strip()
+
+        # city, country: after last \textbar\ → \textbf{CITY}, COUNTRY}
+        m = re.search(r'\\textbar\\\s+\\textbf\{([^}]+)\},\s*([^}\n]+)', header)
+        if m:
+            r["city"]    = m.group(1).strip()
+            r["country"] = m.group(2).strip()
+
+        # flag image: first includegraphics inside a minipage
+        m = re.search(
+            r'\\begin\{minipage\}.*?\\includegraphics\[width=\\textwidth\]\{([^}]+)\}',
+            header, re.DOTALL)
+        if m: r["flag_image"] = m.group(1).strip()
+
+        m = re.search(r'\\textbf\{Superficie\}:\s*([^\\\n]+)', header)
+        if m: r["superficie"] = m.group(1).strip()
+
+        m = re.search(r'\\textbf\{Popolazione\}:\s*([^\\\n]+)', header)
+        if m: r["popolazione"] = m.group(1).strip()
+
+        m = re.search(r'\\textit\{([^}]+)\}', header)
+        if m: r["description"] = m.group(1).strip()
+
+        r["portrait_images"] = re.findall(r'\\portraitLargeMargin\{([^}]+)\}', header)
+
+        # text block: after \noindent DATE \newline \newline
+        m = re.search(r'\\noindent\s+(.*?)\\newline\s*\\newline\s*\n(.*?)$', header, re.DOTALL)
+        if m:
+            r["text_date"] = m.group(1).strip()
+            r["text"]      = m.group(2).strip()
+
+        return r
+
+    def _update_header(self, data) -> dict:
+        section = data.get("section", "").strip()
+        if not section:
+            return {"ok": False, "error": "Section mancante"}
+        path = ROOT / "sections" / Path(section).name
+        if not path.exists():
+            return {"ok": False, "error": f"File non trovato: {section}"}
+
+        day         = str(data.get("day",     "X")).strip()
+        title       = data.get("title",       "Title").strip()
+        date        = data.get("date",        "01 January 2020").strip()
+        city        = data.get("city",        "City").strip()
+        country     = data.get("country",     "Country").strip()
+        flag_image  = data.get("flag_image",  "").strip()
+        superficie  = data.get("superficie",  "").strip()
+        popolazione = data.get("popolazione", "").strip()
+        description = data.get("description", "").strip()
+        portraits   = [p.strip() for p in data.get("portrait_images", []) if str(p).strip()]
+        text_date   = (data.get("text_date", "") or date).strip()
+        raw_text    = data.get("text", "").strip()
+
+        hdr  = (f"\\begin{{center}}\n"
+                f"    {{\\large \\textbf{{Day {day}}} \\textbar\\ {title} \\textbar\\"
+                f" {date} \\textbar\\ \\textbf{{{city}}}, {country}}}\n"
+                f"\\end{{center}}\n\n"
+                f"\\noindent\\rule{{\\textwidth}}{{0.4pt}}\n")
+
+        if flag_image:
+            hdr += (f"\\begin{{figure}}[h!]\n"
+                    f"    \\centering\n"
+                    f"    \\begin{{minipage}}[h]{{0.48\\textwidth}}\n"
+                    f"        \\centering\n"
+                    f"        \\includegraphics[width=\\textwidth]{{{flag_image}}}\n"
+                    f"    \\end{{minipage}}\n"
+                    f"    \\hfill\n"
+                    f"    \\begin{{minipage}}[h]{{0.48\\textwidth}}\n"
+                    f"        \\raggedright\n"
+                    f"        \\textbf{{Superficie}}: {superficie} \\\\\n"
+                    f"        \\vspace{{0.3cm}}\n"
+                    f"        \\textbf{{Popolazione}}: {popolazione} \\\\\n"
+                    f"        \\vspace{{0.3cm}}\n"
+                    f"        \\textit{{{description}}}\n"
+                    f"    \\end{{minipage}}\n"
+                    f"\\end{{figure}}\n\n")
+
+        if portraits:
+            hdr += "\n".join(f"\\portraitLargeMargin{{{p}}}" for p in portraits) + "\n\n"
+
+        if raw_text:
+            paras = [p.strip() for p in raw_text.split("\n\n") if p.strip()]
+            hdr  += f"\\noindent {text_date} \\newline \\newline\n" + "\n\n".join(paras) + "\n"
+
+        content  = path.read_text(encoding="utf-8")
+        _, pages = split_pages(content)
+        path.write_text(join_pages(hdr, pages), encoding="utf-8")
         return {"ok": True}
 
     def _page_map(self) -> list:
