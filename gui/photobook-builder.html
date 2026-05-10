@@ -100,6 +100,44 @@
     }
     .pdf-placeholder .icon { font-size: 32px; }
 
+    /* PDF.js pages container */
+    #pdf-pages {
+      width: 100%; height: 100%; overflow-y: auto; overflow-x: hidden;
+      padding: 8px; display: flex; flex-direction: column; gap: 6px;
+      background: #0a0a18; display: none;
+    }
+    #pdf-pages::-webkit-scrollbar { width: 4px; }
+    .pdf-page-wrap {
+      position: relative; flex-shrink: 0; margin: 0 auto;
+      border-radius: 2px; overflow: hidden;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.6);
+    }
+    .pdf-page-wrap canvas { display: block; }
+    .pdf-page-wrap.editable { cursor: pointer; }
+    .pdf-page-wrap.editable:hover .pdf-edit-overlay { opacity: 1; }
+    .pdf-edit-overlay {
+      position: absolute; inset: 0;
+      background: rgba(167,139,250,0.12);
+      border: 2px solid var(--accent);
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; transition: opacity 0.15s; pointer-events: none;
+    }
+    .pdf-edit-badge {
+      background: var(--accent); color: #fff;
+      font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 10px;
+    }
+    .pdf-loading {
+      position: absolute; inset: 0; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      color: var(--muted); font-size: 11px; gap: 6px;
+    }
+    .pdf-spinner {
+      width: 20px; height: 20px; border: 2px solid var(--border);
+      border-top-color: var(--accent); border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
     /* ── Canvas panel ────────────────────────────────────────────────── */
     .canvas-panel {
       flex: 1; min-width: 0;
@@ -356,6 +394,7 @@
       <button class="icon-btn" id="refresh-pdf-btn" title="Aggiorna PDF">↻</button>
     </div>
     <div class="pdf-wrap">
+      <div id="pdf-pages"></div>
       <iframe id="pdf-frame" title="PDF preview"></iframe>
       <div class="pdf-placeholder" id="pdf-placeholder">
         <span class="icon">📄</span>
@@ -682,9 +721,11 @@ function renderPagesStrip() {
 
   // Existing pages
   sectionPages.forEach((page, i) => {
+    const layout    = LAYOUTS.find(l => l.id === page.command);
+    const chipLabel = layout ? layout.label : (page.command || '?');
     const chip = el('div', 'page-chip' + (activePageIndex === i ? ' active' : ''));
     chip.innerHTML = `<span class="chip-num">P${i + 1}</span>
-                      <span class="chip-cmd">${page.command || '?'}</span>`;
+                      <span class="chip-cmd">${chipLabel}</span>`;
     chip.title = `Clicca per modificare la pagina ${i + 1}`;
     chip.addEventListener('click', () => loadPageForEdit(page, i));
     strip.appendChild(chip);
@@ -865,21 +906,116 @@ function updateCanvasControls() {
 }
 
 // ── PDF ───────────────────────────────────────────────────────────────────
+let _pdfjsLib  = null;
+let _pageMap   = [];   // [{section, page_index, pdf_page}]
+
+async function _loadPdfJs() {
+  if (_pdfjsLib) return true;
+  return new Promise(resolve => {
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+    s.onload = () => {
+      _pdfjsLib = window['pdfjs-dist/build/pdf'] || window.pdfjsLib;
+      if (!_pdfjsLib) { resolve(false); return; }
+      _pdfjsLib.GlobalWorkerOptions.workerSrc =
+        'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      resolve(true);
+    };
+    s.onerror = () => resolve(false);
+    document.head.appendChild(s);
+  });
+}
+
+async function _loadPageMap() {
+  try {
+    const r = await fetch('/page-map');
+    _pageMap = await r.json();
+  } catch { _pageMap = []; }
+}
+
 async function refreshPDF() {
+  const pagesEl      = document.getElementById('pdf-pages');
+  const frameEl      = document.getElementById('pdf-frame');
+  const placeholder  = document.getElementById('pdf-placeholder');
+
   try {
     const res = await fetch('/pdf?' + Date.now());
     if (!res.ok) {
-      document.getElementById('pdf-frame').style.display = 'none';
-      document.getElementById('pdf-placeholder').style.display = 'flex'; return;
+      pagesEl.style.display  = 'none';
+      frameEl.style.display  = 'none';
+      placeholder.style.display = 'flex';
+      return;
     }
-    const blob  = await res.blob();
-    const url   = URL.createObjectURL(blob);
-    const frame = document.getElementById('pdf-frame');
-    if (frame.src && frame.src.startsWith('blob:')) URL.revokeObjectURL(frame.src);
-    frame.src = url;
-    frame.style.display = 'block';
-    document.getElementById('pdf-placeholder').style.display = 'none';
+
+    // Show loading spinner inside pdf-pages
+    pagesEl.style.display    = 'flex';
+    frameEl.style.display    = 'none';
+    placeholder.style.display = 'none';
+    pagesEl.innerHTML = '<div class="pdf-loading"><div class="pdf-spinner"></div>Caricamento PDF…</div>';
+
+    const [blob] = await Promise.all([res.blob(), _loadPageMap()]);
+    const ok = await _loadPdfJs();
+
+    if (!ok) {
+      // Fallback: native iframe
+      const url = URL.createObjectURL(blob);
+      if (frameEl.src && frameEl.src.startsWith('blob:')) URL.revokeObjectURL(frameEl.src);
+      frameEl.src = url;
+      pagesEl.style.display = 'none';
+      frameEl.style.display = 'block';
+      return;
+    }
+
+    const arrayBuf = await blob.arrayBuffer();
+    const pdfDoc   = await _pdfjsLib.getDocument({ data: arrayBuf }).promise;
+
+    const panelW = pagesEl.parentElement.clientWidth || 280;
+    const dpr    = window.devicePixelRatio || 1;
+
+    pagesEl.innerHTML = '';
+    for (let num = 1; num <= pdfDoc.numPages; num++) {
+      const page     = await pdfDoc.getPage(num);
+      const vp0      = page.getViewport({ scale: 1 });
+      const scale    = (panelW - 20) / vp0.width;
+      const viewport = page.getViewport({ scale });
+
+      const canvas   = document.createElement('canvas');
+      canvas.width   = Math.floor(viewport.width  * dpr);
+      canvas.height  = Math.floor(viewport.height * dpr);
+      canvas.style.width  = Math.floor(viewport.width)  + 'px';
+      canvas.style.height = Math.floor(viewport.height) + 'px';
+
+      const ctx = canvas.getContext('2d');
+      ctx.scale(dpr, dpr);
+      await page.render({ canvasContext: ctx, viewport }).promise;
+
+      const wrap = document.createElement('div');
+      wrap.className = 'pdf-page-wrap';
+      wrap.style.width = Math.floor(viewport.width) + 'px';
+      wrap.appendChild(canvas);
+
+      const entry = _pageMap.find(e => e.pdf_page === num);
+      if (entry) {
+        wrap.classList.add('editable');
+        const overlay = document.createElement('div');
+        overlay.className = 'pdf-edit-overlay';
+        overlay.innerHTML = '<span class="pdf-edit-badge">✎ Modifica</span>';
+        wrap.appendChild(overlay);
+        wrap.addEventListener('click', () => _selectSectionAndEdit(entry.section, entry.page_index));
+      }
+      pagesEl.appendChild(wrap);
+    }
   } catch { /* server offline */ }
+}
+
+async function _selectSectionAndEdit(sectionName, pageIndex) {
+  const sel = document.getElementById('section-select');
+  if (!sel.value || sel.value !== sectionName) {
+    sel.value = sectionName;
+    await onSectionChange();
+  }
+  const page = sectionPages[pageIndex];
+  if (page) loadPageForEdit(page, pageIndex);
 }
 
 // ── Insert / Save / Delete ────────────────────────────────────────────────
@@ -902,6 +1038,9 @@ async function insertPage() {
     });
     const data = await r.json();
     if (!data.ok) { setStatus(`✗ ${data.error}`, 'error'); setBusy(false); return; }
+    // Reset canvas: keep layout, clear images
+    slotData = Array(activeLayout.count).fill(null);
+    buildCanvas(); updateLatex();
     // Refresh pages strip then compile
     const res2 = await fetch(`/pages?section=${encodeURIComponent(section)}`);
     sectionPages = await res2.json();

@@ -37,6 +37,7 @@ _RE_INACTIVE  = re.compile(r'^\s*%\s*\\include\{sections/([^}]+)\}', re.MULTILIN
 _RE_ANY_INC   = re.compile(r'^\s*%?\s*\\include\{sections/[^}]+\}', re.MULTILINE)
 _RE_END_DOC   = re.compile(r'^\s*\\end\{document\}', re.MULTILINE)
 _IMAGE_EXTS   = {'.jpg', '.jpeg', '.png', '.webp', '.tiff'}
+_LABEL_RE     = re.compile(r'^\\label\{pb-[^}]+\}[ \t]*\n?', re.MULTILINE)
 
 
 # ── Helpers per la gestione di pagine nei file .tex ───────────────────────
@@ -53,8 +54,14 @@ def join_pages(header: str, pages: list) -> str:
 
 
 def extract_command(block: str) -> str | None:
-    m = re.match(r'\s*\\([a-zA-Z]+)', block)
-    return m.group(1) if m else None
+    for line in block.strip().splitlines():
+        line = line.strip()
+        if not line or line.startswith('\\label{pb-'):
+            continue
+        m = re.match(r'\\([a-zA-Z]+)', line)
+        if m:
+            return m.group(1)
+    return None
 
 
 def extract_images(block: str) -> list:
@@ -81,10 +88,11 @@ class Handler(BaseHTTPRequestHandler):
         q = parse_qs(p.query)
         path = p.path
 
-        if   path == "/":         self._file(GUI / "photobook-builder.html", "text/html")
-        elif path == "/pdf":      self._pdf()
-        elif path == "/images":   self._json(self._list_images())
-        elif path == "/sections": self._json(self._list_sections())
+        if   path == "/":          self._file(GUI / "photobook-builder.html", "text/html")
+        elif path == "/pdf":       self._pdf()
+        elif path == "/images":    self._json(self._list_images())
+        elif path == "/sections":  self._json(self._list_sections())
+        elif path == "/page-map":  self._json(self._page_map())
         elif path == "/pages":
             self._json(self._list_pages(unquote(q.get("section", [""])[0])))
         elif path == "/image":
@@ -196,8 +204,12 @@ class Handler(BaseHTTPRequestHandler):
         path = ROOT / "sections" / Path(section).name
         if not path.exists():
             return {"ok": False, "error": f"File non trovato: {section}"}
+        content = path.read_text(encoding="utf-8")
+        _, existing = split_pages(content)
+        slug  = Path(section).stem
+        label = f"\\label{{pb-{slug}-{len(existing)}}}"
         with path.open("a", encoding="utf-8") as fh:
-            fh.write(f"\n\\clearpage\n{latex}\n")
+            fh.write(f"\n\\clearpage\n{label}\n{latex}\n")
         return {"ok": True}
 
     def _update_page(self, data) -> dict:
@@ -213,7 +225,9 @@ class Handler(BaseHTTPRequestHandler):
         header, pages = split_pages(content)
         if not (0 <= index < len(pages)):
             return {"ok": False, "error": f"Indice pagina non valido: {index}"}
-        pages[index] = latex
+        slug  = Path(section).stem
+        label = f"\\label{{pb-{slug}-{index}}}"
+        pages[index] = f"{label}\n{latex}"
         path.write_text(join_pages(header, pages), encoding="utf-8")
         return {"ok": True}
 
@@ -230,8 +244,29 @@ class Handler(BaseHTTPRequestHandler):
         if not (0 <= index < len(pages)):
             return {"ok": False, "error": f"Indice pagina non valido: {index}"}
         del pages[index]
+        # Re-label remaining pages so PDF page-map stays consistent
+        slug = Path(section).stem
+        pages = [f"\\label{{pb-{slug}-{i}}}\n{_LABEL_RE.sub('', p).strip()}"
+                 for i, p in enumerate(pages)]
         path.write_text(join_pages(header, pages), encoding="utf-8")
         return {"ok": True}
+
+    def _page_map(self) -> list:
+        """Return [{section, page_index, pdf_page}] parsed from main.aux labels."""
+        aux = ROOT / "main.aux"
+        if not aux.exists():
+            return []
+        text = aux.read_text(encoding="utf-8", errors="ignore")
+        result = []
+        # \newlabel{pb-SLUG-IDX}{{SEC}{PAGE}...}
+        for m in re.finditer(
+            r'\\newlabel\{pb-(.+)-(\d+)\}\{\{[^}]*\}\{(\d+)\}', text
+        ):
+            slug = m.group(1)
+            idx  = int(m.group(2))
+            page = int(m.group(3))
+            result.append({"section": slug + ".tex", "page_index": idx, "pdf_page": page})
+        return result
 
     def _compile(self) -> dict:
         t0 = time.time()
