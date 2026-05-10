@@ -40,6 +40,31 @@ _IMAGE_EXTS   = {'.jpg', '.jpeg', '.png', '.webp', '.tiff'}
 _LABEL_RE     = re.compile(r'^\\label\{pb-[^}]+\}[ \t]*\n?', re.MULTILINE)
 
 
+# ── LaTeX text escaping ───────────────────────────────────────────────────
+_TEX_SPECIAL = [
+    ('\\', r'\textbackslash{}'),
+    ('{',  r'\{'),
+    ('}',  r'\}'),
+    ('$',  r'\$'),
+    ('&',  r'\&'),
+    ('#',  r'\#'),
+    ('%',  r'\%'),
+    ('_',  r'\_'),
+    ('^',  r'\^{}'),
+    ('~',  r'\textasciitilde{}'),
+]
+
+def tex_escape(text: str) -> str:
+    """Escape LaTeX special characters in plain user-provided text."""
+    for char, escaped in _TEX_SPECIAL:
+        text = text.replace(char, escaped)
+    return text
+
+def label_slug(slug: str) -> str:
+    """Make a section slug safe for use inside \\label{}."""
+    return re.sub(r'[^a-zA-Z0-9-]', '-', slug)
+
+
 # ── Helpers per la gestione di pagine nei file .tex ───────────────────────
 def split_pages(content: str):
     """Restituisce (header, [page_blocks]) separati da \\clearpage."""
@@ -209,7 +234,7 @@ class Handler(BaseHTTPRequestHandler):
             return {"ok": False, "error": f"File non trovato: {section}"}
         content = path.read_text(encoding="utf-8")
         _, existing = split_pages(content)
-        slug  = Path(section).stem
+        slug  = label_slug(Path(section).stem)
         label = f"\\label{{pb-{slug}-{len(existing)}}}"
         with path.open("a", encoding="utf-8") as fh:
             fh.write(f"\n\\clearpage\n{label}\n{latex}\n")
@@ -228,7 +253,7 @@ class Handler(BaseHTTPRequestHandler):
         header, pages = split_pages(content)
         if not (0 <= index < len(pages)):
             return {"ok": False, "error": f"Indice pagina non valido: {index}"}
-        slug  = Path(section).stem
+        slug  = label_slug(Path(section).stem)
         label = f"\\label{{pb-{slug}-{index}}}"
         pages[index] = f"{label}\n{latex}"
         path.write_text(join_pages(header, pages), encoding="utf-8")
@@ -248,7 +273,7 @@ class Handler(BaseHTTPRequestHandler):
             return {"ok": False, "error": f"Indice pagina non valido: {index}"}
         del pages[index]
         # Re-label remaining pages so PDF page-map stays consistent
-        slug = Path(section).stem
+        slug = label_slug(Path(section).stem)
         pages = [f"\\label{{pb-{slug}-{i}}}\n{_LABEL_RE.sub('', p).strip()}"
                  for i, p in enumerate(pages)]
         path.write_text(join_pages(header, pages), encoding="utf-8")
@@ -317,18 +342,21 @@ class Handler(BaseHTTPRequestHandler):
         if not path.exists():
             return {"ok": False, "error": f"File non trovato: {section}"}
 
-        day         = str(data.get("day",     "X")).strip()
-        title       = data.get("title",       "Title").strip()
-        date        = data.get("date",        "01 January 2020").strip()
-        city        = data.get("city",        "City").strip()
-        country     = data.get("country",     "Country").strip()
+        # Raw values (image paths must NOT be escaped)
         flag_image  = data.get("flag_image",  "").strip()
-        superficie  = data.get("superficie",  "").strip()
-        popolazione = data.get("popolazione", "").strip()
-        description = data.get("description", "").strip()
         portraits   = [p.strip() for p in data.get("portrait_images", []) if str(p).strip()]
-        text_date   = (data.get("text_date", "") or date).strip()
-        raw_text    = data.get("text", "").strip()
+
+        # User-typed text fields — escape LaTeX special chars
+        day         = tex_escape(str(data.get("day",     "X")).strip())
+        title       = tex_escape(data.get("title",       "Title").strip())
+        date        = tex_escape(data.get("date",        "01 January 2020").strip())
+        city        = tex_escape(data.get("city",        "City").strip())
+        country     = tex_escape(data.get("country",     "Country").strip())
+        superficie  = tex_escape(data.get("superficie",  "").strip())
+        popolazione = tex_escape(data.get("popolazione", "").strip())
+        description = tex_escape(data.get("description", "").strip())
+        text_date   = tex_escape((data.get("text_date", "") or date).strip())
+        raw_text    = data.get("text", "").strip()  # escaped paragraph-by-paragraph below
 
         hdr  = (f"\\begin{{center}}\n"
                 f"    {{\\large \\textbf{{Day {day}}} \\textbar\\ {title} \\textbar\\"
@@ -358,7 +386,7 @@ class Handler(BaseHTTPRequestHandler):
             hdr += "\n".join(f"\\portraitLargeMargin{{{p}}}" for p in portraits) + "\n\n"
 
         if raw_text:
-            paras = [p.strip() for p in raw_text.split("\n\n") if p.strip()]
+            paras = [tex_escape(p.strip()) for p in raw_text.split("\n\n") if p.strip()]
             hdr  += f"\\noindent {text_date} \\newline \\newline\n" + "\n\n".join(paras) + "\n"
 
         content  = path.read_text(encoding="utf-8")
