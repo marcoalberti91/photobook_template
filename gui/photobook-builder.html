@@ -1,0 +1,1495 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <title>Photobook Builder</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:          #111111;
+      --panel:       #1c1c1e;
+      --panel2:      #2c2c2e;
+      --panel3:      #3a3a3c;
+      --border:      rgba(84,84,88,0.48);
+      --border2:     rgba(84,84,88,0.28);
+      --accent:      #007AFF;
+      --accent-dim:  #0062cc;
+      --accent-bg:   rgba(0,122,255,0.13);
+      --text:        #f5f5f7;
+      --text2:       rgba(245,245,247,0.56);
+      --text3:       rgba(245,245,247,0.28);
+      --success:     #32d74b;
+      --warn:        #ff9f0a;
+      --error:       #ff453a;
+    }
+
+    body {
+      font-family: -apple-system, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      display: flex; flex-direction: column;
+      overflow: hidden; font-size: 13px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Header ── */
+    header {
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+      padding: 0 20px;
+      height: 48px;
+      display: flex; align-items: center; gap: 12px;
+      flex-shrink: 0;
+    }
+    .logo {
+      font-size: 14px; font-weight: 600; color: var(--text); letter-spacing: -0.3px;
+    }
+    .logo-icon { margin-right: 6px; font-size: 15px; }
+    .header-sep { flex: 1; }
+    .server-badge {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 12px; font-weight: 500; color: var(--text2);
+    }
+    .server-badge .dot {
+      width: 7px; height: 7px; border-radius: 50%; background: var(--text3); flex-shrink: 0;
+      transition: background 0.3s;
+    }
+    .server-badge.online  .dot  { background: var(--success); box-shadow: 0 0 5px var(--success); }
+    .server-badge.online  .slbl { color: var(--text2); }
+    .server-badge.offline .dot  { background: var(--error); }
+    .server-badge.offline .slbl { color: var(--error); }
+
+    /* ── Workspace ── */
+    .workspace { flex: 1; display: flex; overflow: hidden; min-height: 0; }
+
+    .panel-head {
+      font-size: 11px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.06em; color: var(--text3);
+      padding: 10px 14px 8px;
+      border-bottom: 1px solid var(--border2);
+      display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
+    }
+    .icon-btn {
+      background: none; border: none; color: var(--text3);
+      cursor: pointer; font-size: 15px; padding: 0 2px; line-height: 1;
+      transition: color 0.15s; border-radius: 4px;
+    }
+    .icon-btn:hover { color: var(--text); }
+
+    /* ── Layouts panel ── */
+    .layouts-panel {
+      width: 162px; min-width: 162px; background: var(--panel);
+      border-right: 1px solid var(--border);
+      display: flex; flex-direction: column; overflow: hidden;
+    }
+    .layouts-scroll { flex: 1; overflow-y: auto; padding: 6px 8px 16px; }
+    .layouts-scroll::-webkit-scrollbar { width: 4px; }
+    .layouts-scroll::-webkit-scrollbar-thumb { background: var(--panel3); border-radius: 2px; }
+    .section-title {
+      font-size: 10px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.07em; color: var(--text3);
+      padding: 12px 4px 5px;
+    }
+    .layout-card {
+      display: flex; align-items: center; gap: 9px;
+      padding: 6px 7px; border-radius: 8px; cursor: pointer;
+      border: 1px solid transparent;
+      transition: background 0.15s, border-color 0.15s;
+      margin-bottom: 1px;
+    }
+    .layout-card:hover    { background: var(--panel2); }
+    .layout-card.selected { background: var(--accent-bg); border-color: rgba(0,122,255,0.4); }
+    .layout-thumb svg { width: 32px; height: 45px; display: block; flex-shrink: 0; border-radius: 3px; }
+    .layout-name { font-size: 11.5px; line-height: 1.35; color: var(--text); }
+    .layout-card:not(.selected) .layout-name { color: var(--text2); }
+    .layout-card.selected .layout-name { color: var(--accent); }
+
+    /* ── PDF panel ── */
+    .pdf-panel {
+      width: 290px; min-width: 240px; background: #0a0a0c;
+      border-right: 1px solid var(--border);
+      display: flex; flex-direction: column; overflow: hidden;
+    }
+    .pdf-wrap { flex: 1; position: relative; overflow: hidden; }
+    #pdf-frame { width: 100%; height: 100%; border: none; display: none; }
+    .pdf-placeholder {
+      position: absolute; inset: 0; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      color: var(--text3); font-size: 12px; text-align: center; line-height: 2; gap: 8px;
+    }
+    .pdf-placeholder .icon { font-size: 28px; opacity: 0.5; }
+
+    #pdf-pages {
+      width: 100%; height: 100%; overflow-y: auto; overflow-x: hidden;
+      padding: 10px; display: flex; flex-direction: column; gap: 8px;
+      background: #0a0a0c; display: none;
+    }
+    #pdf-pages::-webkit-scrollbar { width: 4px; }
+    #pdf-pages::-webkit-scrollbar-thumb { background: var(--panel3); border-radius: 2px; }
+    .pdf-page-wrap {
+      position: relative; flex-shrink: 0; margin: 0 auto;
+      border-radius: 3px; overflow: hidden;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.7);
+      transition: transform 0.15s;
+    }
+    .pdf-page-wrap canvas { display: block; }
+    .pdf-page-wrap.editable { cursor: pointer; }
+    .pdf-page-wrap.editable:hover { transform: scale(1.01); }
+    .pdf-page-wrap.editable:hover .pdf-edit-overlay { opacity: 1; }
+    .pdf-edit-overlay {
+      position: absolute; inset: 0;
+      background: rgba(0,122,255,0.10);
+      border: 1.5px solid var(--accent);
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; transition: opacity 0.15s; pointer-events: none;
+    }
+    .pdf-edit-badge {
+      background: var(--accent); color: #fff;
+      font-size: 11px; font-weight: 600; padding: 4px 11px; border-radius: 20px;
+      letter-spacing: -0.1px;
+    }
+    .pdf-loading {
+      position: absolute; inset: 0; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      color: var(--text3); font-size: 11px; gap: 8px;
+    }
+    .pdf-spinner {
+      width: 18px; height: 18px; border: 2px solid var(--panel3);
+      border-top-color: var(--accent); border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Canvas panel ── */
+    .canvas-panel {
+      flex: 1; min-width: 0;
+      display: flex; flex-direction: column;
+      align-items: center; overflow: hidden;
+    }
+
+    /* Pages strip */
+    .pages-strip {
+      display: none; flex-direction: row;
+      gap: 4px; overflow-x: auto;
+      padding: 10px 14px 0;
+      width: 100%; flex-shrink: 0;
+      align-items: center;
+    }
+    .pages-strip::-webkit-scrollbar { height: 3px; }
+    .pages-strip::-webkit-scrollbar-thumb { background: var(--panel3); border-radius: 2px; }
+
+    .page-chip {
+      display: flex; flex-direction: column; align-items: center;
+      padding: 5px 11px; border-radius: 10px;
+      border: 1px solid var(--border2);
+      cursor: pointer; flex-shrink: 0;
+      font-size: 10px; line-height: 1.4; text-align: center; min-width: 60px;
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
+      color: var(--text2); background: var(--panel);
+      user-select: none;
+    }
+    .page-chip:hover { background: var(--panel2); border-color: var(--border); color: var(--text); }
+    .page-chip.active {
+      background: var(--accent-bg); border-color: rgba(0,122,255,0.5); color: var(--accent);
+    }
+    .page-chip.new-chip { border-style: dashed; }
+    .chip-num  { font-weight: 700; font-size: 11px; }
+    .chip-cmd  { font-size: 9px; margin-top: 1px; opacity: 0.75; max-width: 80px;
+                 overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    /* Mode badge */
+    .mode-badge {
+      font-size: 11.5px; font-weight: 500; padding: 4px 12px; border-radius: 20px;
+      margin: 8px 0 0; flex-shrink: 0; align-self: center;
+      letter-spacing: -0.1px;
+    }
+    .mode-badge.new-mode  { color: var(--accent); background: var(--accent-bg); }
+    .mode-badge.edit-mode { color: var(--warn);   background: rgba(255,159,10,0.12); }
+
+    /* Empty state */
+    .empty-state {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      text-align: center; color: var(--text3); font-size: 13px;
+      line-height: 2.2; pointer-events: none; gap: 6px;
+    }
+    .empty-icon { font-size: 36px; opacity: 0.4; }
+    .empty-hint { font-size: 12px; color: var(--text3); }
+
+    /* A4 canvas */
+    .canvas-center {
+      flex: 1; display: flex; align-items: center; justify-content: center;
+      min-height: 0; width: 100%; padding: 10px 0;
+    }
+    .page-shadow {
+      box-shadow: 0 12px 48px rgba(0,0,0,0.7), 0 2px 8px rgba(0,0,0,0.5);
+      flex-shrink: 0; border-radius: 2px; overflow: hidden;
+    }
+    #page-canvas { background: white; position: relative; overflow: hidden; display: block; }
+
+    .slot {
+      position: absolute; display: flex; align-items: center; justify-content: center;
+      overflow: hidden;
+      outline: 1.5px dashed rgba(0,122,255,0.3); outline-offset: -1.5px;
+      transition: outline 0.1s, background 0.1s;
+    }
+    .slot.dragover { outline: 2px dashed var(--accent); background: rgba(0,122,255,0.08) !important; }
+    .slot.filled   { outline: none; }
+    .slot img      { width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none; }
+    .slot-num      { font-size: 14px; font-weight: 700; color: rgba(0,122,255,0.25);
+                     pointer-events: none; user-select: none; }
+    .slot-clear    {
+      position: absolute; top: 5px; right: 5px;
+      width: 20px; height: 20px; background: rgba(0,0,0,0.6); color: white;
+      border: none; border-radius: 50%; cursor: pointer; font-size: 13px;
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; transition: opacity 0.12s; z-index: 10;
+    }
+    .slot:hover .slot-clear { opacity: 1; }
+
+    /* Canvas controls */
+    .canvas-controls {
+      display: none; align-items: center; gap: 8px;
+      padding: 10px 14px; flex-shrink: 0; width: 100%;
+      border-top: 1px solid var(--border2);
+    }
+    .ctrl-sep { flex: 1; }
+
+    #canvas-action-btn {
+      padding: 8px 18px; border-radius: 10px; font-size: 12.5px; font-weight: 600;
+      cursor: pointer; border: none; white-space: nowrap;
+      transition: opacity 0.15s, background 0.15s;
+      background: var(--accent); color: #fff;
+      min-width: 140px; text-align: center; letter-spacing: -0.1px;
+    }
+    #canvas-action-btn:not(:disabled):hover { background: var(--accent-dim); }
+    #canvas-action-btn:disabled { opacity: 0.35; cursor: default; }
+    #canvas-action-btn.save-mode {
+      background: rgba(50,215,75,0.15); color: var(--success);
+      border: 1px solid rgba(50,215,75,0.3);
+    }
+    #canvas-action-btn.save-mode:not(:disabled):hover {
+      background: rgba(50,215,75,0.22);
+    }
+
+    #canvas-delete-btn {
+      padding: 8px 14px; border-radius: 10px; font-size: 12px; font-weight: 500;
+      cursor: pointer; border: 1px solid rgba(255,69,58,0.3);
+      background: rgba(255,69,58,0.1); color: var(--error); white-space: nowrap;
+      transition: background 0.15s;
+    }
+    #canvas-delete-btn:hover { background: rgba(255,69,58,0.2); }
+
+    /* ── Images panel ── */
+    .images-panel {
+      width: 190px; min-width: 170px; background: var(--panel);
+      border-left: 1px solid var(--border);
+      display: flex; flex-direction: column; overflow: hidden;
+    }
+    .images-grid {
+      flex: 1; overflow-y: auto; padding: 8px;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 5px; align-content: start;
+    }
+    .images-grid::-webkit-scrollbar { width: 4px; }
+    .images-grid::-webkit-scrollbar-thumb { background: var(--panel3); border-radius: 2px; }
+    .img-thumb {
+      aspect-ratio: 1; border-radius: 6px; overflow: hidden; cursor: grab;
+      border: 1.5px solid transparent; position: relative; background: var(--panel2);
+      transition: border-color 0.12s, transform 0.12s;
+    }
+    .img-thumb:hover    { border-color: var(--accent); transform: scale(1.03); }
+    .img-thumb.dragging { opacity: 0.35; }
+    .img-thumb img { width: 100%; height: 100%; object-fit: cover; pointer-events: none; display: block; }
+    .img-thumb-name {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      padding: 2px 4px; background: rgba(0,0,0,0.75); color: white;
+      font-size: 9px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      opacity: 0; transition: opacity 0.1s;
+    }
+    .img-thumb:hover .img-thumb-name { opacity: 1; }
+    .empty-images {
+      grid-column: 1/-1; color: var(--text3);
+      font-size: 11px; text-align: center; line-height: 1.8; padding: 18px 8px;
+    }
+
+    /* ── Chapters bar ── */
+    .chapters-bar {
+      background: var(--panel);
+      border-top: 1px solid var(--border);
+      padding: 9px 16px;
+      display: flex; align-items: center; gap: 10px;
+      flex-shrink: 0; min-height: 48px; flex-wrap: wrap;
+    }
+    .bar-label {
+      font-size: 11px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.06em; color: var(--text3); white-space: nowrap;
+    }
+    .chapter-chips { display: flex; gap: 5px; flex-wrap: wrap; align-items: center; }
+
+    .chapter-chip {
+      display: inline-flex; align-items: center; gap: 0;
+      border-radius: 20px; overflow: hidden;
+      border: 1px solid var(--border2);
+      transition: border-color 0.15s; user-select: none; white-space: nowrap;
+    }
+    .chapter-chip.active  { border-color: rgba(0,122,255,0.5); }
+    .chapter-chip.off     { opacity: 0.6; }
+
+    /* Left part: click to select chapter */
+    .chip-select {
+      padding: 4px 10px 4px 9px;
+      font-size: 11.5px; font-weight: 500; cursor: pointer;
+      transition: background 0.12s, color 0.12s;
+      color: var(--text2); background: transparent;
+    }
+    .chapter-chip.active  .chip-select { color: var(--accent); background: var(--accent-bg); }
+    .chapter-chip:not(.active) .chip-select:hover { background: var(--panel2); color: var(--text); }
+
+    /* Right part: small toggle dot to include/exclude from compilation */
+    .chip-toggle {
+      padding: 4px 8px 4px 3px;
+      cursor: pointer; display: flex; align-items: center;
+      transition: background 0.12s;
+      border-left: 1px solid var(--border2);
+    }
+    .chapter-chip.active .chip-toggle { background: var(--accent-bg); }
+    .chip-toggle:hover { background: var(--panel3); }
+    .chip-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      flex-shrink: 0; pointer-events: none;
+    }
+    .chapter-chip.on  .chip-dot { background: var(--success); }
+    .chapter-chip.off .chip-dot { background: var(--text3); border: 1.5px solid var(--text3); background: transparent; }
+
+    .new-chapter-form { display: flex; gap: 5px; align-items: center; margin-left: 4px; }
+    .chapter-input {
+      background: var(--panel2); color: var(--text); border: 1px solid var(--border);
+      border-radius: 8px; padding: 5px 10px; font-size: 12px; width: 120px;
+      font-family: inherit;
+    }
+    .chapter-input:focus { outline: none; border-color: var(--accent); }
+    .chapter-input::placeholder { color: var(--text3); }
+    .create-btn {
+      padding: 5px 12px; border-radius: 8px; font-size: 12px; font-weight: 500;
+      background: var(--panel2); color: var(--text2);
+      border: 1px solid var(--border); cursor: pointer;
+      transition: background 0.12s, color 0.12s; font-family: inherit;
+    }
+    .create-btn:hover { background: var(--panel3); color: var(--text); }
+    .chapters-sep { flex: 1; }
+    #compile-btn {
+      padding: 7px 18px; border-radius: 10px; font-size: 12.5px; font-weight: 600;
+      cursor: pointer; border: none;
+      background: var(--accent); color: white; white-space: nowrap;
+      transition: background 0.15s, opacity 0.15s; letter-spacing: -0.1px;
+      font-family: inherit;
+    }
+    #compile-btn:not(:disabled):hover { background: var(--accent-dim); }
+    #compile-btn:disabled { opacity: 0.4; cursor: default; }
+    #status-msg {
+      font-size: 12px; min-width: 170px; white-space: nowrap;
+      overflow: hidden; text-overflow: ellipsis; font-weight: 400;
+    }
+    #status-msg.info    { color: var(--text3); }
+    #status-msg.success { color: var(--success); }
+    #status-msg.warn    { color: var(--warn); }
+    #status-msg.error   { color: var(--error); }
+
+    /* ── LaTeX bar ── */
+    .latex-bar {
+      background: #0a0a0c; border-top: 1px solid var(--border2);
+      display: flex; align-items: stretch; max-height: 42px; flex-shrink: 0;
+    }
+    #latex-code {
+      flex: 1; padding: 8px 14px;
+      font-family: 'SF Mono', 'Menlo', 'Monaco', 'Courier New', monospace;
+      font-size: 11px; color: rgba(0,122,255,0.8); overflow-x: auto;
+      white-space: pre; line-height: 1.5;
+    }
+    .latex-placeholder { color: var(--text3); font-style: normal; font-family: inherit; }
+    #copy-btn {
+      padding: 0 16px; background: transparent; color: var(--text3);
+      border: none; border-left: 1px solid var(--border2); cursor: pointer;
+      font-size: 11.5px; font-weight: 500; white-space: nowrap;
+      transition: color 0.12s; font-family: inherit;
+    }
+    #copy-btn:hover   { color: var(--text); }
+    #copy-btn.success { color: var(--success); }
+
+    /* ── Header form ── */
+    #header-form {
+      display: none; flex-direction: column; gap: 0;
+      flex: 1; overflow-y: auto; min-height: 0;
+      padding: 0 16px 16px; width: 100%;
+    }
+    #header-form::-webkit-scrollbar { width: 4px; }
+    #header-form::-webkit-scrollbar-thumb { background: var(--panel3); border-radius: 2px; }
+    .hf-section {
+      padding: 14px 0 10px; border-bottom: 1px solid var(--border2);
+    }
+    .hf-section:last-child { border-bottom: none; }
+    .hf-section-title {
+      font-size: 11px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.06em; color: var(--text3); margin-bottom: 10px;
+    }
+    .hf-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 7px; }
+    .hf-row:last-child { margin-bottom: 0; }
+    .hf-field { display: flex; flex-direction: column; gap: 4px; }
+    .hf-field.grow { flex: 1; min-width: 80px; }
+    .hf-field.short { width: 52px; flex-shrink: 0; }
+    .hf-field.medium { width: 88px; flex-shrink: 0; }
+    .hf-field label {
+      font-size: 10px; font-weight: 500; text-transform: uppercase;
+      letter-spacing: 0.06em; color: var(--text3);
+    }
+    .hf-field input, .hf-field textarea {
+      background: var(--panel2); color: var(--text); border: 1px solid var(--border);
+      border-radius: 7px; padding: 6px 9px; font-size: 12.5px; font-family: inherit;
+      resize: vertical;
+    }
+    .hf-field input:focus, .hf-field textarea:focus {
+      outline: none; border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(0,122,255,0.15);
+    }
+    .hf-field textarea { resize: vertical; min-height: 54px; }
+
+    .hf-img-drop {
+      border: 1.5px dashed var(--border); border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      flex-direction: column; gap: 4px; cursor: pointer;
+      background: var(--panel2); overflow: hidden; position: relative;
+      transition: border-color 0.15s;
+    }
+    .hf-img-drop:hover, .hf-img-drop.dragover { border-color: var(--accent); }
+    .hf-img-drop.filled { border-style: solid; border-color: rgba(0,122,255,0.4); }
+    .hf-img-drop img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .hf-drop-label { font-size: 10px; color: var(--text3); text-align: center; pointer-events: none; }
+    .hf-drop-clear {
+      position: absolute; top: 3px; right: 3px; width: 18px; height: 18px;
+      background: rgba(0,0,0,0.6); color: white; border: none; border-radius: 50%;
+      cursor: pointer; font-size: 12px; display: flex; align-items: center; justify-content: center;
+      opacity: 0; transition: opacity 0.12s;
+    }
+    .hf-img-drop:hover .hf-drop-clear { opacity: 1; }
+
+    .hf-portraits-row {
+      display: flex; gap: 7px; overflow-x: auto; padding: 2px 0 6px;
+      align-items: flex-end;
+    }
+    .hf-portraits-row::-webkit-scrollbar { height: 3px; }
+    .hf-portrait-slot {
+      flex-shrink: 0; width: 60px; height: 82px;
+      border: 1.5px dashed var(--border); border-radius: 7px;
+      display: flex; align-items: center; justify-content: center;
+      background: var(--panel2); position: relative; overflow: hidden; cursor: pointer;
+      transition: border-color 0.15s;
+    }
+    .hf-portrait-slot:hover, .hf-portrait-slot.dragover { border-color: var(--accent); }
+    .hf-portrait-slot.filled { border-style: solid; border-color: rgba(0,122,255,0.4); }
+    .hf-portrait-slot img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .hf-portrait-slot .hf-drop-clear { opacity: 0; }
+    .hf-portrait-slot:hover .hf-drop-clear { opacity: 1; }
+    .hf-portrait-add {
+      flex-shrink: 0; width: 60px; height: 82px;
+      border: 1.5px dashed var(--border); border-radius: 7px;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--text3); font-size: 20px; cursor: pointer;
+      background: transparent; transition: border-color 0.15s, color 0.15s;
+    }
+    .hf-portrait-add.dragover { border-color: var(--accent); color: var(--accent); }
+    .hf-portrait-add:hover { border-color: var(--accent); color: var(--accent); }
+
+    #hf-text {
+      width: 100%; resize: vertical; min-height: 120px;
+      background: var(--panel2); color: var(--text); border: 1px solid var(--border);
+      border-radius: 7px; padding: 9px 10px; font-size: 12.5px; font-family: inherit;
+      line-height: 1.6;
+    }
+    #hf-text:focus {
+      outline: none; border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(0,122,255,0.15);
+    }
+
+    /* Hidden section select (still used internally) */
+    #section-select { display: none; }
+
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--panel3); border-radius: 2px; }
+  </style>
+</head>
+<body>
+
+<header>
+  <span class="logo"><span class="logo-icon">📷</span>Photobook Builder</span>
+  <div class="header-sep"></div>
+  <div class="server-badge" id="server-badge">
+    <span class="dot"></span><span class="slbl">Connessione…</span>
+  </div>
+</header>
+
+<div class="workspace">
+
+  <!-- Layouts -->
+  <aside class="layouts-panel">
+    <div class="panel-head">Layout</div>
+    <div class="layouts-scroll" id="layouts-panel"></div>
+  </aside>
+
+  <!-- PDF -->
+  <div class="pdf-panel">
+    <div class="panel-head">
+      Documento
+      <button class="icon-btn" id="refresh-pdf-btn" title="Aggiorna PDF">↻</button>
+    </div>
+    <div class="pdf-wrap">
+      <div id="pdf-pages"></div>
+      <iframe id="pdf-frame" title="PDF preview"></iframe>
+      <div class="pdf-placeholder" id="pdf-placeholder">
+        <span class="icon">📄</span>
+        Nessun PDF<br><small>Compila con ▶ in basso</small>
+      </div>
+    </div>
+  </div>
+
+  <!-- Canvas panel -->
+  <div class="canvas-panel">
+
+    <!-- Strip pagine esistenti -->
+    <div class="pages-strip" id="pages-strip"></div>
+
+    <!-- Empty state -->
+    <div class="empty-state" id="empty-state">
+      <div class="empty-icon">←</div>
+      <div>Seleziona un capitolo<br>dal pannello in basso</div>
+      <div class="empty-hint">poi scegli un layout a sinistra</div>
+    </div>
+
+    <!-- Mode badge -->
+    <div id="mode-badge" class="mode-badge new-mode" style="display:none"></div>
+
+    <!-- Header edit form -->
+    <div id="header-form">
+      <div class="hf-section">
+        <div class="hf-section-title">Intestazione capitolo</div>
+        <div class="hf-row">
+          <div class="hf-field short"><label>Giorno</label><input type="text" id="hf-day" placeholder="1"></div>
+          <div class="hf-field grow"><label>Titolo</label><input type="text" id="hf-title" placeholder="Titolo"></div>
+        </div>
+        <div class="hf-row">
+          <div class="hf-field grow"><label>Data</label><input type="text" id="hf-date" placeholder="01 January 2020"></div>
+          <div class="hf-field medium"><label>Città</label><input type="text" id="hf-city" placeholder="City"></div>
+          <div class="hf-field medium"><label>Paese</label><input type="text" id="hf-country" placeholder="Country"></div>
+        </div>
+      </div>
+
+      <div class="hf-section">
+        <div class="hf-section-title">Bandiera e dati paese</div>
+        <div class="hf-row" style="align-items:flex-start; flex-wrap:nowrap; gap:10px;">
+          <div id="hf-flag-zone" class="hf-img-drop" style="width:76px;height:100px;flex-shrink:0;">
+            <span class="hf-drop-label">Trascina<br>bandiera</span>
+          </div>
+          <div style="flex:1; display:flex; flex-direction:column; gap:6px; min-width:0;">
+            <div class="hf-field"><label>Superficie</label><input type="text" id="hf-superficie" placeholder="200 km²"></div>
+            <div class="hf-field"><label>Popolazione</label><input type="text" id="hf-popolazione" placeholder="2,7 milioni"></div>
+            <div class="hf-field"><label>Descrizione</label><textarea id="hf-description" rows="2" placeholder="Descrizione breve…"></textarea></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="hf-section">
+        <div class="hf-section-title">Immagini sezione testo</div>
+        <div class="hf-portraits-row" id="hf-portraits"></div>
+      </div>
+
+      <div class="hf-section">
+        <div class="hf-section-title">Testo del diario</div>
+        <div class="hf-row" style="margin-bottom:8px;">
+          <div class="hf-field grow"><label>Data intestazione testo</label><input type="text" id="hf-text-date" placeholder="01 January 2020"></div>
+        </div>
+        <textarea id="hf-text" placeholder="Testo del diario…&#10;Separa i paragrafi con una riga vuota."></textarea>
+      </div>
+    </div>
+
+    <!-- Canvas -->
+    <div class="canvas-center">
+      <div class="page-shadow" id="page-shadow" style="display:none">
+        <div id="page-canvas"></div>
+      </div>
+    </div>
+
+    <!-- Controls below canvas -->
+    <div class="canvas-controls" id="canvas-controls">
+      <select id="section-select"></select>
+      <div class="ctrl-sep"></div>
+      <button id="canvas-delete-btn" style="display:none">🗑 Elimina</button>
+      <button id="canvas-action-btn" disabled>＋ Inserisci pagina</button>
+    </div>
+
+  </div>
+
+  <!-- Images -->
+  <div class="images-panel">
+    <div class="panel-head">
+      Immagini
+      <button class="icon-btn" id="refresh-imgs-btn" title="Ricarica immagini">↻</button>
+    </div>
+    <div class="images-grid" id="images-grid">
+      <div class="empty-images">Connessione…</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Chapters bar -->
+<div class="chapters-bar">
+  <span class="bar-label">Capitoli</span>
+  <div class="chapter-chips" id="chapter-chips"></div>
+  <div class="new-chapter-form">
+    <input type="text" class="chapter-input" id="new-chapter-input"
+           placeholder="nuovo-capitolo" maxlength="40">
+    <button class="create-btn" id="new-chapter-btn">+ Crea</button>
+  </div>
+  <div class="chapters-sep"></div>
+  <button id="compile-btn">▶ Compila PDF</button>
+  <span id="status-msg" class="info"></span>
+</div>
+
+<!-- LaTeX bar -->
+<div class="latex-bar">
+  <div id="latex-code"><span class="latex-placeholder">Il codice LaTeX apparirà qui…</span></div>
+  <button id="copy-btn">Copia</button>
+</div>
+
+<script>
+// ── Layout definitions ───────────────────────────────────────────────────────
+const RATIO = 303 / 216;
+
+const LAYOUTS = [
+  { id:'portraitFullscreen',          label:'Fullscreen',             group:'1 immagine', count:1,
+    slots:[[0,0,100,100]],            latex: p=>`\\portraitFullscreen{${p[0]}}` },
+  { id:'portraitLargeMargin',         label:'Margini grandi',         group:'1 immagine', count:1,
+    slots:[[10,7,80,86]],             latex: p=>`\\portraitLargeMargin{${p[0]}}` },
+  { id:'portraitThinMargin',          label:'Margini sottili',        group:'1 immagine', count:1,
+    slots:[[3,2,94,96]],              latex: p=>`\\portraitThinMargin{${p[0]}}` },
+  { id:'landscapeThinMarginCentered', label:'Landscape centrato',     group:'1 immagine', count:1,
+    slots:[[3,28,94,44]],             latex: p=>`\\landscapeThinMarginCentered{${p[0]}}` },
+  { id:'splitImageLeft',              label:'Metà sinistra',          group:'1 immagine', count:1,
+    slots:[[0,0,50,100]],             latex: p=>`\\splitImageLeft{${p[0]}}` },
+  { id:'splitImageRight',             label:'Metà destra',            group:'1 immagine', count:1,
+    slots:[[50,0,50,100]],            latex: p=>`\\splitImageRight{${p[0]}}` },
+  { id:'twoImagesThinMargins',        label:'2 in pila (no margini)', group:'2 immagini', count:2,
+    slots:[[0,0,100,49.5],[0,50.5,100,49.5]], latex: p=>`\\twoImagesThinMargins{${p[0]}}\n  {${p[1]}}` },
+  { id:'twoImagesLargeMargins',       label:'2 in pila (margini)',    group:'2 immagini', count:2,
+    slots:[[10,5,80,42],[10,53,80,42]],       latex: p=>`\\twoImagesLargeMargins{${p[0]}}\n  {${p[1]}}` },
+  { id:'twoLandscapeFullPage',        label:'2 Landscape fullpage',   group:'2 immagini', count:2,
+    slots:[[0,0.5,100,48],[0,51.5,100,48]],   latex: p=>`\\twoLandscapeFullPage{${p[0]}}\n  {${p[1]}}` },
+  { id:'twoPortraitTopPage',          label:'2 Ritratto affiancate',  group:'2 immagini', count:2,
+    slots:[[1,5,48,58],[51,5,48,58]],          latex: p=>`\\twoPortraitTopPage{${p[0]}}\n  {${p[1]}}` },
+  { id:'twoPortraitStackedTopPage',   label:'2 Ritratto impilate',    group:'2 immagini', count:2,
+    slots:[[20,2,60,44],[20,50,60,44]],        latex: p=>`\\twoPortraitStackedTopPage{${p[0]}}\n  {${p[1]}}` },
+  { id:'threeImagesLargeMargins',         label:'Landscape + 2 Ritratto', group:'3 immagini', count:3,
+    slots:[[5,4,90,38],[5,47,43,47],[52,47,43,47]],
+    latex: p=>`\\threeImagesLargeMargins{${p[0]}}\n  {${p[1]}}\n  {${p[2]}}` },
+  { id:'threeImagesLargeMarginsInverted', label:'2 Ritratto + Landscape', group:'3 immagini', count:3,
+    slots:[[5,4,43,47],[52,4,43,47],[5,56,90,38]],
+    latex: p=>`\\threeImagesLargeMarginsInverted{${p[0]}}\n  {${p[1]}}\n  {${p[2]}}` },
+  { id:'threeImagesThinMargins',          label:'3 Margini sottili',      group:'3 immagini', count:3,
+    slots:[[1,1,98,42],[1,45,47.5,54],[51.5,45,47.5,54]],
+    latex: p=>`\\threeImagesThinMargins{${p[0]}}\n  {${p[1]}}\n  {${p[2]}}` },
+  { id:'fourPortraitImages', label:'4 Ritratto (2×2)', group:'4 immagini', count:4,
+    slots:[[2,2,46,45],[52,2,46,45],[2,52,46,45],[52,52,46,45]],
+    latex: p=>`\\fourPortraitImages{${p[0]}}\n  {${p[1]}}\n  {${p[2]}}\n  {${p[3]}}` },
+  { id:'sixLandscapeImages', label:'6 Landscape (3×2)', group:'6 immagini', count:6,
+    slots:[[0,0,49,32],[51,0,49,32],[0,34,49,32],[51,34,49,32],[0,68,49,32],[51,68,49,32]],
+    latex: p=>`\\sixLandscapeImages{${p[0]}}\n  {${p[1]}}\n  {${p[2]}}\n  {${p[3]}}\n  {${p[4]}}\n  {${p[5]}}` },
+  { id:'eightLandscapeImages', label:'8 Landscape (4×2)', group:'8 immagini', count:8,
+    slots:[[1,1,47,23],[52,1,47,23],[1,26,47,23],[52,26,47,23],
+           [1,51,47,23],[52,51,47,23],[1,76,47,23],[52,76,47,23]],
+    latex: p=>`\\eightLandscapeImages{${p[0]}}\n  {${p[1]}}\n  {${p[2]}}\n  {${p[3]}}\n  {${p[4]}}\n  {${p[5]}}\n  {${p[6]}}\n  {${p[7]}}` },
+];
+
+// ── State ────────────────────────────────────────────────────────────────────
+let activeLayout      = null;
+let slotData          = [];
+let images            = [];
+let activeSectionName = null;
+let sectionPages      = [];      // [{index, command, images}]
+let activePageIndex   = null;    // null = new page, int = edit mode, 'header' = header edit
+let currentSections   = [];      // all known sections
+
+let hfFlag      = null;          // {path, src}
+let hfPortraits = [];            // [{path, src} | null]
+
+function computePageSize() {
+  const panel    = document.querySelector('.canvas-panel');
+  const strip    = document.getElementById('pages-strip');
+  const badge    = document.getElementById('mode-badge');
+  const ctrls    = document.getElementById('canvas-controls');
+  const reserved = (strip.offsetHeight || 0) + (badge.offsetHeight || 0)
+                 + (ctrls.offsetHeight || 52) + 40;
+  const maxW = Math.min(panel.clientWidth - 32, 330);
+  const maxH = panel.clientHeight - reserved;
+  const byH  = Math.floor(maxH / RATIO);
+  const w    = Math.max(Math.min(maxW, byH), 160);
+  return { w, h: Math.round(w * RATIO) };
+}
+
+// ── Bootstrap ────────────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  buildLayoutPanel();
+  initServer();
+  document.getElementById('copy-btn').addEventListener('click', copyLatex);
+  document.getElementById('compile-btn').addEventListener('click', () => compilePDF());
+  document.getElementById('canvas-action-btn').addEventListener('click', insertOrSavePage);
+  document.getElementById('canvas-delete-btn').addEventListener('click', deletePage);
+  document.getElementById('refresh-pdf-btn').addEventListener('click', refreshPDF);
+  document.getElementById('refresh-imgs-btn').addEventListener('click', loadImages);
+  document.getElementById('new-chapter-btn').addEventListener('click', createChapter);
+  document.getElementById('new-chapter-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') createChapter();
+  });
+  document.addEventListener('dragover', e => e.preventDefault());
+});
+
+// ── Server ───────────────────────────────────────────────────────────────────
+async function initServer() {
+  try {
+    await Promise.all([loadImages(), loadSections()]);
+    await refreshPDF();
+    setServerBadge(true);
+  } catch {
+    setServerBadge(false);
+    setStatus('⚠ Server non raggiungibile — avvia: python gui/server.py', 'warn');
+    document.getElementById('images-grid').innerHTML =
+      '<div class="empty-images">Server offline<br>python gui/server.py</div>';
+  }
+}
+
+function setServerBadge(ok) {
+  const b = document.getElementById('server-badge');
+  b.className = 'server-badge ' + (ok ? 'online' : 'offline');
+  b.querySelector('.slbl').textContent = ok ? 'Server attivo' : 'Server offline';
+}
+
+// ── Images ───────────────────────────────────────────────────────────────────
+async function loadImages() {
+  const res = await fetch('/images');
+  if (!res.ok) throw new Error();
+  images = await res.json();
+  renderImageGrid();
+}
+
+function renderImageGrid() {
+  const grid = document.getElementById('images-grid');
+  grid.innerHTML = '';
+  if (!images.length) {
+    grid.appendChild(el('div', 'empty-images', 'Nessuna immagine\nnella cartella images/')); return;
+  }
+  images.forEach(img => {
+    const thumb = el('div', 'img-thumb');
+    thumb.draggable = true;
+    const imgEl = document.createElement('img');
+    imgEl.src   = `/image?path=${encodeURIComponent(img.path)}`;
+    imgEl.alt   = img.name; imgEl.loading = 'lazy';
+    const src   = imgEl.src;
+    thumb.appendChild(imgEl);
+    thumb.appendChild(el('div', 'img-thumb-name', img.name));
+    thumb.addEventListener('dragstart', e => {
+      thumb.classList.add('dragging');
+      e.dataTransfer.setData('application/x-img', JSON.stringify({ path: img.path, src }));
+      e.dataTransfer.effectAllowed = 'copy';
+    });
+    thumb.addEventListener('dragend', () => thumb.classList.remove('dragging'));
+    grid.appendChild(thumb);
+  });
+}
+
+// ── Sections / chapters ──────────────────────────────────────────────────────
+async function loadSections() {
+  const res  = await fetch('/sections');
+  if (!res.ok) throw new Error();
+  currentSections = await res.json();
+  renderChapterChips(currentSections);
+  // Keep hidden select in sync
+  const sel = document.getElementById('section-select');
+  sel.innerHTML = '<option value="">—</option>';
+  currentSections.forEach(s => {
+    const o = document.createElement('option');
+    o.value = s.name; o.textContent = s.name;
+    sel.appendChild(o);
+  });
+  // Auto-select if only one chapter
+  if (currentSections.length === 1 && !activeSectionName) {
+    await selectChapter(currentSections[0].name);
+  }
+}
+
+function renderChapterChips(secs) {
+  const chips = document.getElementById('chapter-chips');
+  chips.innerHTML = '';
+  secs.forEach(s => {
+    const isActive = activeSectionName === s.name;
+    const chip = el('div', `chapter-chip ${s.active ? 'on' : 'off'}${isActive ? ' active' : ''}`);
+    chip.dataset.section = s.name;
+
+    // Left area: click to select chapter
+    const selectArea = el('span', 'chip-select', s.name.replace('.tex', ''));
+    selectArea.title = 'Apri capitolo';
+    selectArea.addEventListener('click', () => selectChapter(s.name));
+
+    // Right area: dot to toggle include/exclude
+    const toggleArea = el('span', 'chip-toggle');
+    const dot = el('span', 'chip-dot');
+    dot.title = s.active ? 'Incluso — clicca per escludere' : 'Escluso — clicca per includere';
+    toggleArea.appendChild(dot);
+    toggleArea.addEventListener('click', () => toggleSection(s.name, chip));
+
+    chip.appendChild(selectArea);
+    chip.appendChild(toggleArea);
+    chips.appendChild(chip);
+  });
+}
+
+async function selectChapter(name) {
+  activeSectionName = name;
+  activePageIndex   = null;
+  sectionPages      = [];
+
+  // Keep hidden select in sync
+  const sel = document.getElementById('section-select');
+  sel.value = name;
+
+  try {
+    const res  = await fetch(`/pages?section=${encodeURIComponent(name)}`);
+    sectionPages = await res.json();
+  } catch { sectionPages = []; }
+
+  renderChapterChips(currentSections);
+  renderPagesStrip();
+  _revealControls();
+  updateCanvasControls();
+}
+
+function _revealControls() {
+  // Show pages strip and controls whenever a chapter is selected
+  document.getElementById('pages-strip').style.display    = 'flex';
+  document.getElementById('canvas-controls').style.display = 'flex';
+  document.getElementById('empty-state').style.display    = activeSectionName && !activeLayout ? 'flex' : 'none';
+}
+
+async function toggleSection(sectionName, chipEl) {
+  const was = chipEl.classList.contains('on');
+  chipEl.classList.toggle('on', !was); chipEl.classList.toggle('off', was);
+  const dot = chipEl.querySelector('.chip-dot');
+  if (dot) dot.title = !was ? 'Incluso — clicca per escludere' : 'Escluso — clicca per includere';
+  try {
+    const r    = await fetch('/toggle-section', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ section: sectionName, active: !was }),
+    });
+    const data = await r.json();
+    if (!data.ok) {
+      chipEl.classList.toggle('on', was); chipEl.classList.toggle('off', !was);
+      setStatus(`✗ ${data.error}`, 'error');
+    } else {
+      setStatus(`${!was ? '✓' : '○'} ${sectionName.replace('.tex','')} — compila per aggiornare`, 'info');
+      // Sync currentSections
+      const sec = currentSections.find(s => s.name === sectionName);
+      if (sec) sec.active = !was;
+    }
+  } catch {
+    chipEl.classList.toggle('on', was); chipEl.classList.toggle('off', !was);
+    setStatus('✗ Errore di rete', 'error');
+  }
+}
+
+async function createChapter() {
+  const input = document.getElementById('new-chapter-input');
+  const name  = input.value.trim();
+  if (!name) { input.focus(); return; }
+  setStatus('Creazione capitolo…', 'info');
+  try {
+    const r    = await fetch('/new-chapter', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ name }),
+    });
+    const data = await r.json();
+    if (!data.ok) { setStatus(`✗ ${data.error}`, 'error'); return; }
+    input.value = '';
+    setStatus(`✓ Creato ${data.name}`, 'success');
+    await loadSections();
+  } catch { setStatus('✗ Errore di rete', 'error'); }
+}
+
+// ── Pages strip ──────────────────────────────────────────────────────────────
+function renderPagesStrip() {
+  const strip = document.getElementById('pages-strip');
+  strip.innerHTML = '';
+
+  if (!activeSectionName) {
+    strip.style.display = 'none'; return;
+  }
+  strip.style.display = 'flex';
+
+  // Header chip
+  const hChip = el('div', 'page-chip' + (activePageIndex === 'header' ? ' active' : ''));
+  hChip.innerHTML = '<span class="chip-num">📋</span><span class="chip-cmd">Intestazione</span>';
+  hChip.title = 'Modifica l\'intestazione del capitolo';
+  hChip.addEventListener('click', editHeader);
+  strip.appendChild(hChip);
+
+  // Existing pages
+  sectionPages.forEach((page, i) => {
+    const layout    = LAYOUTS.find(l => l.id === page.command);
+    const chipLabel = layout ? layout.label : (page.command || '?');
+    const chip = el('div', 'page-chip' + (activePageIndex === i ? ' active' : ''));
+    chip.innerHTML = `<span class="chip-num">P${i + 1}</span>
+                      <span class="chip-cmd">${chipLabel}</span>`;
+    chip.title = `Modifica pagina ${i + 1}`;
+    chip.addEventListener('click', () => loadPageForEdit(page, i));
+    strip.appendChild(chip);
+  });
+
+  // "Nuova pagina" chip
+  const newChip = el('div', 'page-chip new-chip' + (activePageIndex === null ? ' active' : ''));
+  newChip.innerHTML = '<span class="chip-num">＋</span><span class="chip-cmd">Nuova</span>';
+  newChip.title = 'Crea una nuova pagina';
+  newChip.addEventListener('click', switchToNewMode);
+  strip.appendChild(newChip);
+}
+
+// ── Header form ──────────────────────────────────────────────────────────────
+function _showCanvas() {
+  document.getElementById('header-form').style.display   = 'none';
+  document.querySelector('.canvas-center').style.display = 'flex';
+  document.getElementById('empty-state').style.display   = 'none';
+}
+function _showHeaderForm() {
+  document.getElementById('header-form').style.display   = 'flex';
+  document.querySelector('.canvas-center').style.display = 'none';
+  document.getElementById('empty-state').style.display   = 'none';
+  document.getElementById('mode-badge').style.display    = 'block';
+  document.getElementById('canvas-controls').style.display = 'flex';
+}
+
+async function editHeader() {
+  if (!activeSectionName) return;
+  activePageIndex = 'header';
+  renderPagesStrip();
+  setStatus('Caricamento intestazione…', 'info');
+  try {
+    const res  = await fetch(`/header?section=${encodeURIComponent(activeSectionName)}`);
+    const data = await res.json();
+    if (!data.ok) { setStatus(`✗ ${data.error}`, 'error'); return; }
+    fillHeaderForm(data);
+  } catch { setStatus('✗ Errore di rete', 'error'); return; }
+  _showHeaderForm();
+  updateCanvasControls();
+  setStatus('', 'info');
+}
+
+function fillHeaderForm(data) {
+  document.getElementById('hf-day').value         = data.day        || '';
+  document.getElementById('hf-title').value       = data.title      || '';
+  document.getElementById('hf-date').value        = data.date       || '';
+  document.getElementById('hf-city').value        = data.city       || '';
+  document.getElementById('hf-country').value     = data.country    || '';
+  document.getElementById('hf-superficie').value  = data.superficie || '';
+  document.getElementById('hf-popolazione').value = data.popolazione|| '';
+  document.getElementById('hf-description').value = data.description|| '';
+  document.getElementById('hf-text-date').value   = data.text_date  || data.date || '';
+  document.getElementById('hf-text').value        = data.text       || '';
+
+  hfFlag = data.flag_image ? { path: data.flag_image,
+    src: `/image?path=${encodeURIComponent(data.flag_image)}` } : null;
+  _renderFlagZone();
+  hfPortraits = (data.portrait_images || []).map(p =>
+    ({ path: p, src: `/image?path=${encodeURIComponent(p)}` }));
+  renderHeaderPortraits();
+}
+
+function _renderFlagZone() {
+  const zone = document.getElementById('hf-flag-zone');
+  zone.innerHTML = '';
+  if (hfFlag) {
+    zone.classList.add('filled');
+    const img = document.createElement('img');
+    img.src = hfFlag.src;
+    zone.appendChild(img);
+    const clr = el('button', 'hf-drop-clear', '×');
+    clr.addEventListener('click', e => { e.stopPropagation(); hfFlag = null; _renderFlagZone(); });
+    zone.appendChild(clr);
+  } else {
+    zone.classList.remove('filled');
+    zone.appendChild(el('span', 'hf-drop-label', 'Trascina\nbandiera'));
+  }
+  _bindImgDrop(zone, img => { hfFlag = img; _renderFlagZone(); });
+}
+
+function renderHeaderPortraits() {
+  const row = document.getElementById('hf-portraits');
+  row.innerHTML = '';
+  hfPortraits.forEach((item, i) => {
+    const slot = el('div', 'hf-portrait-slot' + (item ? ' filled' : ''));
+    if (item) {
+      const img = document.createElement('img');
+      img.src = item.src;
+      slot.appendChild(img);
+      const clr = el('button', 'hf-drop-clear', '×');
+      clr.addEventListener('click', e => {
+        e.stopPropagation(); hfPortraits.splice(i, 1); renderHeaderPortraits();
+      });
+      slot.appendChild(clr);
+    } else {
+      slot.appendChild(el('span', 'hf-drop-label', String(i + 1)));
+    }
+    _bindImgDrop(slot, img => { hfPortraits[i] = img; renderHeaderPortraits(); });
+    row.appendChild(slot);
+  });
+  const add = el('div', 'hf-portrait-add', '＋');
+  add.title = 'Trascina un\'immagine per aggiungere una pagina';
+  _bindImgDrop(add, img => { hfPortraits.push(img); renderHeaderPortraits(); });
+  row.appendChild(add);
+}
+
+function _bindImgDrop(target, onDrop) {
+  target.addEventListener('dragover',  e => { e.preventDefault(); target.classList.add('dragover'); });
+  target.addEventListener('dragleave', () => target.classList.remove('dragover'));
+  target.addEventListener('drop', e => {
+    e.preventDefault(); target.classList.remove('dragover');
+    const json = e.dataTransfer.getData('application/x-img');
+    if (json) onDrop(JSON.parse(json));
+  });
+}
+
+async function saveHeader() {
+  if (!activeSectionName) return;
+  const payload = {
+    section:         activeSectionName,
+    day:             document.getElementById('hf-day').value.trim(),
+    title:           document.getElementById('hf-title').value.trim(),
+    date:            document.getElementById('hf-date').value.trim(),
+    city:            document.getElementById('hf-city').value.trim(),
+    country:         document.getElementById('hf-country').value.trim(),
+    flag_image:      hfFlag ? hfFlag.path : '',
+    superficie:      document.getElementById('hf-superficie').value.trim(),
+    popolazione:     document.getElementById('hf-popolazione').value.trim(),
+    description:     document.getElementById('hf-description').value.trim(),
+    portrait_images: hfPortraits.filter(Boolean).map(p => p.path),
+    text_date:       document.getElementById('hf-text-date').value.trim(),
+    text:            document.getElementById('hf-text').value,
+  };
+  setBusy(true, 'Salvataggio intestazione…');
+  try {
+    const r    = await fetch('/update-header', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await r.json();
+    if (!data.ok) { setStatus(`✗ ${data.error}`, 'error'); setBusy(false); return; }
+    await compilePDF(false);
+    setStatus('✓ Intestazione salvata', 'success');
+  } catch (e) { setStatus(`✗ ${e.message}`, 'error'); }
+  setBusy(false);
+}
+
+function loadPageForEdit(page, index) {
+  activePageIndex = index;
+  _showCanvas();
+  const layout = LAYOUTS.find(l => l.id === page.command);
+  if (!layout) {
+    setStatus(`⚠ Layout "${page.command}" non riconosciuto`, 'warn');
+    renderPagesStrip();
+    return;
+  }
+  _applyLayout(layout);
+  page.images.forEach((imgPath, i) => {
+    if (i < slotData.length)
+      slotData[i] = { path: imgPath, src: `/image?path=${encodeURIComponent(imgPath)}` };
+  });
+  buildCanvas(); updateLatex(); renderPagesStrip(); updateCanvasControls();
+}
+
+function switchToNewMode() {
+  activePageIndex = null;
+  _showCanvas();
+  if (activeLayout) slotData = Array(activeLayout.count).fill(null);
+  buildCanvas(); updateLatex(); renderPagesStrip(); updateCanvasControls();
+}
+
+// ── Layout panel ─────────────────────────────────────────────────────────────
+function buildLayoutPanel() {
+  const panel  = document.getElementById('layouts-panel');
+  const groups = {};
+  LAYOUTS.forEach(l => { (groups[l.group] = groups[l.group] || []).push(l); });
+  Object.entries(groups).forEach(([group, list]) => {
+    panel.appendChild(el('div', 'section-title', group));
+    list.forEach(layout => {
+      const card = el('div', 'layout-card');
+      card.dataset.id = layout.id;
+      card.innerHTML  = `<div class="layout-thumb">${makeSVG(layout)}</div>
+                         <span class="layout-name">${layout.label}</span>`;
+      card.addEventListener('click', () => selectLayout(layout));
+      panel.appendChild(card);
+    });
+  });
+}
+
+function makeSVG(layout) {
+  const rects = layout.slots.map((s, i) => {
+    const x = s[0], y = s[1]*1.41, w = s[2], h = s[3]*1.41;
+    return `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}"
+              fill="rgba(0,122,255,0.08)" stroke="#007AFF" stroke-width="2" rx="1"/>
+            <text x="${(x+w/2).toFixed(1)}" y="${(y+h/2).toFixed(1)}"
+              text-anchor="middle" dominant-baseline="middle"
+              font-size="13" font-weight="600" fill="#007AFF">${i+1}</text>`;
+  }).join('');
+  return `<svg viewBox="0 0 100 141" xmlns="http://www.w3.org/2000/svg"
+            style="background:#fff;border-radius:3px;">${rects}</svg>`;
+}
+
+function selectLayout(layout) {
+  if (activePageIndex === 'header') activePageIndex = null;
+  _applyLayout(layout);
+  slotData = Array(layout.count).fill(null);
+  buildCanvas(); updateLatex(); renderPagesStrip(); updateCanvasControls();
+}
+
+function _applyLayout(layout) {
+  document.querySelectorAll('.layout-card').forEach(c => c.classList.remove('selected'));
+  const card = document.querySelector(`.layout-card[data-id="${layout.id}"]`);
+  if (card) card.classList.add('selected');
+  activeLayout = layout;
+  slotData     = Array(layout.count).fill(null);
+
+  _showCanvas();
+  document.getElementById('empty-state').style.display  = 'none';
+  document.getElementById('mode-badge').style.display   = 'block';
+  document.getElementById('page-shadow').style.display  = 'block';
+  document.getElementById('canvas-controls').style.display = 'flex';
+}
+
+// ── Canvas ────────────────────────────────────────────────────────────────────
+function buildCanvas() {
+  if (!activeLayout) return;
+  const { w, h } = computePageSize();
+  const canvas   = document.getElementById('page-canvas');
+  canvas.style.cssText = `width:${w}px;height:${h}px;`;
+  canvas.innerHTML = '';
+
+  activeLayout.slots.forEach((s, i) => {
+    const slot = el('div', 'slot' + (slotData[i] ? ' filled' : ''));
+    Object.assign(slot.style, {
+      left: pct(s[0], w), top: pct(s[1], h), width: pct(s[2], w), height: pct(s[3], h),
+    });
+    if (slotData[i]) {
+      const img = document.createElement('img');
+      img.src   = slotData[i].src;
+      slot.appendChild(img);
+      const clr = el('button', 'slot-clear', '×');
+      clr.addEventListener('click', e => {
+        e.stopPropagation(); slotData[i] = null; buildCanvas(); updateLatex();
+      });
+      slot.appendChild(clr);
+    } else {
+      slot.appendChild(el('span', 'slot-num', String(i + 1)));
+    }
+    bindDropZone(slot, i);
+    canvas.appendChild(slot);
+  });
+}
+
+function bindDropZone(slotEl, idx) {
+  slotEl.addEventListener('dragover',  e  => { e.preventDefault(); slotEl.classList.add('dragover'); });
+  slotEl.addEventListener('dragleave', () => slotEl.classList.remove('dragover'));
+  slotEl.addEventListener('drop', e => {
+    e.preventDefault(); slotEl.classList.remove('dragover');
+    const json = e.dataTransfer.getData('application/x-img');
+    if (json) { slotData[idx] = JSON.parse(json); buildCanvas(); updateLatex(); return; }
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith('image/')) {
+      const r = new FileReader();
+      r.onload = ev => {
+        slotData[idx] = { path: file.webkitRelativePath || file.name, src: ev.target.result };
+        buildCanvas(); updateLatex();
+      };
+      r.readAsDataURL(file);
+    }
+  });
+}
+
+// ── Canvas controls ───────────────────────────────────────────────────────────
+function updateCanvasControls() {
+  const btn    = document.getElementById('canvas-action-btn');
+  const delBtn = document.getElementById('canvas-delete-btn');
+  const badge  = document.getElementById('mode-badge');
+
+  if (activePageIndex === 'header') {
+    badge.textContent = '📋 Intestazione';
+    badge.className   = 'mode-badge edit-mode';
+    btn.textContent   = '💾 Salva intestazione';
+    btn.className     = 'save-mode';
+    btn.disabled      = false;
+    delBtn.style.display = 'none';
+  } else if (activePageIndex !== null) {
+    badge.textContent = `✎ Modifica pagina ${activePageIndex + 1}`;
+    badge.className   = 'mode-badge edit-mode';
+    btn.textContent   = '✓ Salva modifiche';
+    btn.className     = 'save-mode';
+    btn.disabled      = !activeLayout;
+    delBtn.style.display = 'inline-flex';
+  } else {
+    badge.textContent = activeSectionName ? 'Nuova pagina' : '';
+    badge.className   = 'mode-badge new-mode';
+    badge.style.display = activeSectionName ? 'block' : 'none';
+    btn.textContent   = '＋ Inserisci pagina';
+    btn.className     = '';
+    btn.disabled      = !activeLayout || !activeSectionName;
+    delBtn.style.display = 'none';
+  }
+}
+
+// ── PDF ───────────────────────────────────────────────────────────────────────
+let _pdfjsLib = null;
+let _pageMap  = [];
+
+async function _loadPdfJs() {
+  if (_pdfjsLib) return true;
+  return new Promise(resolve => {
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+    s.onload = () => {
+      _pdfjsLib = window['pdfjs-dist/build/pdf'] || window.pdfjsLib;
+      if (!_pdfjsLib) { resolve(false); return; }
+      _pdfjsLib.GlobalWorkerOptions.workerSrc =
+        'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      resolve(true);
+    };
+    s.onerror = () => resolve(false);
+    document.head.appendChild(s);
+  });
+}
+
+async function _loadPageMap() {
+  try {
+    const r = await fetch('/page-map');
+    _pageMap = await r.json();
+  } catch { _pageMap = []; }
+}
+
+async function refreshPDF() {
+  const pagesEl     = document.getElementById('pdf-pages');
+  const frameEl     = document.getElementById('pdf-frame');
+  const placeholder = document.getElementById('pdf-placeholder');
+
+  try {
+    const res = await fetch('/pdf?' + Date.now());
+    if (!res.ok) {
+      pagesEl.style.display = 'none';
+      frameEl.style.display = 'none';
+      placeholder.style.display = 'flex';
+      return;
+    }
+
+    pagesEl.style.display    = 'flex';
+    frameEl.style.display    = 'none';
+    placeholder.style.display = 'none';
+    pagesEl.innerHTML = '<div class="pdf-loading"><div class="pdf-spinner"></div>Caricamento…</div>';
+
+    const [blob] = await Promise.all([res.blob(), _loadPageMap()]);
+    const ok = await _loadPdfJs();
+
+    if (!ok) {
+      const url = URL.createObjectURL(blob);
+      if (frameEl.src && frameEl.src.startsWith('blob:')) URL.revokeObjectURL(frameEl.src);
+      frameEl.src = url;
+      pagesEl.style.display = 'none';
+      frameEl.style.display = 'block';
+      return;
+    }
+
+    const arrayBuf = await blob.arrayBuffer();
+    const pdfDoc   = await _pdfjsLib.getDocument({ data: arrayBuf }).promise;
+    const panelW   = pagesEl.parentElement.clientWidth || 260;
+    const dpr      = window.devicePixelRatio || 1;
+
+    pagesEl.innerHTML = '';
+    for (let num = 1; num <= pdfDoc.numPages; num++) {
+      const page     = await pdfDoc.getPage(num);
+      const vp0      = page.getViewport({ scale: 1 });
+      const scale    = (panelW - 20) / vp0.width;
+      const viewport = page.getViewport({ scale });
+
+      const canvas   = document.createElement('canvas');
+      canvas.width   = Math.floor(viewport.width  * dpr);
+      canvas.height  = Math.floor(viewport.height * dpr);
+      canvas.style.width  = Math.floor(viewport.width)  + 'px';
+      canvas.style.height = Math.floor(viewport.height) + 'px';
+
+      const ctx = canvas.getContext('2d');
+      ctx.scale(dpr, dpr);
+      await page.render({ canvasContext: ctx, viewport }).promise;
+
+      const wrap = document.createElement('div');
+      wrap.className = 'pdf-page-wrap';
+      wrap.style.width = Math.floor(viewport.width) + 'px';
+      wrap.appendChild(canvas);
+
+      const entry = _pageMap.find(e => e.pdf_page === num);
+      if (entry) {
+        wrap.classList.add('editable');
+        const overlay = document.createElement('div');
+        overlay.className = 'pdf-edit-overlay';
+        overlay.innerHTML = '<span class="pdf-edit-badge">✎ Modifica</span>';
+        wrap.appendChild(overlay);
+        wrap.addEventListener('click', () => _selectSectionAndEdit(entry.section, entry.page_index));
+      }
+      pagesEl.appendChild(wrap);
+    }
+  } catch { /* server offline */ }
+}
+
+async function _selectSectionAndEdit(sectionName, pageIndex) {
+  if (activeSectionName !== sectionName) await selectChapter(sectionName);
+  const page = sectionPages[pageIndex];
+  if (page) loadPageForEdit(page, pageIndex);
+}
+
+// ── Insert / Save / Delete ────────────────────────────────────────────────────
+async function insertOrSavePage() {
+  if (activePageIndex === 'header') await saveHeader();
+  else if (activePageIndex !== null) await savePage();
+  else                               await insertPage();
+}
+
+async function insertPage() {
+  if (!activeSectionName) return setStatus('⚠ Seleziona un capitolo', 'warn');
+  if (!activeLayout)      return setStatus('⚠ Seleziona un layout', 'warn');
+
+  const paths = slotData.map((d, i) => d ? d.path : `IMMAGINE_${i + 1}`);
+  setBusy(true, 'Inserimento…');
+  try {
+    const r    = await fetch('/insert', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ section: activeSectionName, latex: activeLayout.latex(paths) }),
+    });
+    const data = await r.json();
+    if (!data.ok) { setStatus(`✗ ${data.error}`, 'error'); setBusy(false); return; }
+    slotData = Array(activeLayout.count).fill(null);
+    buildCanvas(); updateLatex();
+    const res2 = await fetch(`/pages?section=${encodeURIComponent(activeSectionName)}`);
+    sectionPages = await res2.json();
+    renderPagesStrip();
+    await compilePDF(false);
+  } catch (e) { setStatus(`✗ ${e.message}`, 'error'); }
+  setBusy(false);
+}
+
+async function savePage() {
+  if (!activeLayout || activePageIndex === null) return;
+  const paths = slotData.map((d, i) => d ? d.path : `IMMAGINE_${i + 1}`);
+  setBusy(true, 'Salvataggio…');
+  try {
+    const r    = await fetch('/update-page', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ section: activeSectionName, index: activePageIndex, latex: activeLayout.latex(paths) }),
+    });
+    const data = await r.json();
+    if (!data.ok) { setStatus(`✗ ${data.error}`, 'error'); setBusy(false); return; }
+    const res2   = await fetch(`/pages?section=${encodeURIComponent(activeSectionName)}`);
+    sectionPages = await res2.json();
+    renderPagesStrip();
+    await compilePDF(false);
+    setStatus(`✓ Pagina ${activePageIndex + 1} aggiornata`, 'success');
+  } catch (e) { setStatus(`✗ ${e.message}`, 'error'); }
+  setBusy(false);
+}
+
+async function deletePage() {
+  if (activePageIndex === null) return;
+  const num = activePageIndex + 1;
+  if (!confirm(`Rimuovere la pagina ${num} da ${activeSectionName}?`)) return;
+
+  setBusy(true, `Rimozione pagina ${num}…`);
+  try {
+    const r    = await fetch('/delete-page', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ section: activeSectionName, index: activePageIndex }),
+    });
+    const data = await r.json();
+    if (!data.ok) { setStatus(`✗ ${data.error}`, 'error'); setBusy(false); return; }
+    activePageIndex = null;
+    const res2   = await fetch(`/pages?section=${encodeURIComponent(activeSectionName)}`);
+    sectionPages = await res2.json();
+    if (activeLayout) slotData = Array(activeLayout.count).fill(null);
+    buildCanvas(); updateLatex(); renderPagesStrip(); updateCanvasControls();
+    await compilePDF(false);
+    setStatus(`✓ Pagina ${num} rimossa`, 'success');
+  } catch (e) { setStatus(`✗ ${e.message}`, 'error'); }
+  setBusy(false);
+}
+
+async function compilePDF(updateBusy = true) {
+  if (updateBusy) setBusy(true, 'Compilazione…');
+  else            setStatus('Compilazione in corso…', 'info');
+  try {
+    const r    = await fetch('/compile', { method: 'POST' });
+    const data = await r.json();
+    if (data.ok) {
+      setStatus(`✓ Compilato in ${data.seconds}s`, 'success');
+      await refreshPDF();
+    } else {
+      setStatus(`✗ ${data.error}`, 'error');
+    }
+  } catch { setStatus('✗ Server non raggiungibile', 'error'); }
+  if (updateBusy) setBusy(false);
+}
+
+// ── LaTeX bar ─────────────────────────────────────────────────────────────────
+function updateLatex() {
+  const codeEl = document.getElementById('latex-code');
+  if (!activeLayout) {
+    codeEl.innerHTML = '<span class="latex-placeholder">Il codice LaTeX apparirà qui…</span>';
+    return;
+  }
+  const paths = slotData.map((d, i) => d ? d.path : `IMMAGINE_${i + 1}`);
+  codeEl.textContent = activeLayout.latex(paths);
+}
+
+function copyLatex() {
+  if (!activeLayout) return;
+  const paths = slotData.map((d, i) => d ? d.path : `IMMAGINE_${i + 1}`);
+  navigator.clipboard.writeText(activeLayout.latex(paths)).then(() => {
+    const btn = document.getElementById('copy-btn');
+    btn.textContent = '✓ Copiato'; btn.classList.add('success');
+    setTimeout(() => { btn.textContent = 'Copia'; btn.classList.remove('success'); }, 2000);
+  });
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function setBusy(on, msg) {
+  document.getElementById('compile-btn').disabled       = on;
+  document.getElementById('canvas-action-btn').disabled = on;
+  document.getElementById('compile-btn').textContent    = on ? '⏳ In corso…' : '▶ Compila PDF';
+  if (msg) setStatus(msg, 'info');
+}
+
+function setStatus(msg, type = 'info') {
+  const s = document.getElementById('status-msg');
+  s.textContent = msg; s.className = type;
+  if (type === 'success') setTimeout(() => { s.textContent = ''; s.className = 'info'; }, 6000);
+}
+
+function el(tag, cls, text) {
+  const e = document.createElement(tag);
+  if (cls)  e.className   = cls;
+  if (text !== undefined) e.textContent = text;
+  return e;
+}
+function pct(v, total) { return (v / 100 * total) + 'px'; }
+</script>
+</body>
+</html>
