@@ -2,10 +2,9 @@
     \newgeometry{
         hmargin={3mm,3mm},
         vmargin={3mm,3mm},  
-    } 
-    \vspace*{0} % Start content at the top of the page
-    \begin{figure}[t!] % Force the figure to be at the top of the page
-        \centering
+    }
+    \vspace*{-\baselineskip}
+    \noindent\begin{center}
         % Row 1
         \begin{minipage}[b]{0.46\textwidth} % 49.5% width to fit 2 images
             \centering
@@ -55,6 +54,6 @@
             \centering
             \includegraphics[width=\textwidth,height=0.24\textheight,keepaspectratio]{#8}
         \end{minipage}
-    \end{figure}
+        \end{center}
     \restoregeometry
 }

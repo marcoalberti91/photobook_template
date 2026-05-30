@@ -1,13 +1,23 @@
-% Command for 1 portrait image with normal margins
-\newcommand{\portraitLargeMargin}[1]{%
+% Command for 1 landscape image with normal margins
+\newcommand{\landscapeLargeMargin}[1]{%
     \begin{figure}[h]
         \centering
         \includegraphics[width=\textwidth]{#1}
     \end{figure}
 }
 
-% Command for 1 portrait image with reduced margins
-\newcommand{\portraitThinMargin}[1]{%
+% Command for 1 landscape image with normal margins and centered
+\newcommand{\landscapeLargeMarginCentered}[1]{%
+    \clearpage
+    \thispagestyle{empty}
+    \vspace*{\fill}
+    \begin{center}
+        \includegraphics[width=\textwidth,keepaspectratio]{#1}
+    \end{center}
+    \vspace*{\fill}
+    \clearpage
+}
+\newcommand{\landscapeThinMargin}[1]{%
     \newgeometry{margin=1.1cm}
     \begin{figure}[h]
         \centering
@@ -18,14 +28,16 @@
 
 % Command for 1 landscape image with reduced margins and centered
 \newcommand{\landscapeThinMarginCentered}[1]{%
-    \newgeometry{margin=1.1cm} % Thin margins
-    \begin{figure}[!htbp]
-        \centering
-        \vspace*{\fill} % Push towards vertical center
+    \clearpage
+    \newgeometry{margin=1.1cm}
+    \thispagestyle{empty}
+    \vspace*{\fill}
+    \begin{center}
         \includegraphics[width=\textwidth,keepaspectratio]{#1}
-        \vspace*{\fill} % Space below to complete vertical centering
-    \end{figure}
+    \end{center}
+    \vspace*{\fill}
     \restoregeometry
+    \clearpage
 }
 
 % Command for 1 fullscreen portrait image
@@ -73,3 +85,10 @@
   \restoregeometry
 }
 
+% Command for 1 portrait image occupying half page
+\newcommand{\portraitHalfPage}[1]{%
+    \begin{figure}[h]
+        \centering
+        \includegraphics[width=0.55\textwidth,keepaspectratio]{#1}
+    \end{figure}
+}
